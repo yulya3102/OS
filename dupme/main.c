@@ -33,9 +33,27 @@ int atoi(char * pNumber)
     return number;
 }
 
+void _write(int fd, char * buf, int size)
+{
+    int done = 0;
+    while (done < size)
+    {
+        int res = write(fd, buf + done, size - done);
+        if (res == -1)
+        {
+            perror("write failed");
+            _exit(1);
+        }
+        else
+        {
+            done = done + res;
+        }
+    }
+}
 
 int main(int argc, char * argv[])
 {
-    //k = argv[1] ???
+    int k = atoi(argv[1]);
+    char * buffer = malloc(k + 1);
 
 }
