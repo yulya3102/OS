@@ -99,21 +99,21 @@ int main(int argc, char * argv[])
     {
         if (pos == -1) //ignore string
         {
-            if (find_newline(buffer, size) == k)
-            {
-                _write(1, "hello", 5);
-            }
-                _write(1, "hello", 5);
-            sleep(1);
-            _write(1, buffer, size);
-            break;
-            while (pos == 0)
+            while (pos == -1)
             {
                 expected = size;
                 res = _read(0, buffer, expected);
                 pos = find_newline(buffer, res);
             }
-            //??
+            //in buffer - end of ignored string + some data from stream
+            //delete the rest from ignored string
+            //move end of buffer to the begin
+            //fill the end of buffer with new data
+            //find new position of '\n'
+            int string_size = pos + 1;
+            memmove(buffer, buffer + string_size, size - string_size);
+            expected = string_size;
+            res = _read(0, buffer + string_size, expected);
         }
         else
         {
@@ -123,12 +123,14 @@ int main(int argc, char * argv[])
             //find new position of '\n'
             expected = print_next_string(buffer, size);
             res = _read(0, buffer + size - expected, expected);
-            pos = find_newline(buffer, size);
         }
+        //last parameter is size because outside of this cycle it will be anyway refreshed
+        pos = find_newline(buffer, size);
     }
     //res != expected, in buffer some string from end of stream
     //print every string
     size = size - expected + res;
+    pos = find_newline(buffer, size);
     while (pos != -1)
     {
         size -= print_next_string(buffer, size);
