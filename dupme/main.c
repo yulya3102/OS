@@ -99,7 +99,7 @@ int main(int argc, char * argv[])
     {
         if (pos == -1) //ignore string
         {
-            while (pos == -1)
+            while (pos == -1 && res == expected)
             {
                 expected = size;
                 res = _read(0, buffer, expected);
@@ -112,8 +112,14 @@ int main(int argc, char * argv[])
             //find new position of '\n'
             int string_size = pos + 1;
             memmove(buffer, buffer + string_size, size - string_size);
+            if (res != expected)
+            {
+                expected = size;
+                res = 0;
+                break;
+            }
             expected = string_size;
-            res = _read(0, buffer + string_size, expected);
+            res = _read(0, buffer + size - expected, expected);
         }
         else
         {
@@ -131,6 +137,7 @@ int main(int argc, char * argv[])
     //print every string
     size = size - expected + res;
     pos = find_newline(buffer, size);
+
     while (pos != -1)
     {
         size -= print_next_string(buffer, size);
@@ -140,10 +147,4 @@ int main(int argc, char * argv[])
     _write(1, buffer, size);
     _write(1, "\n", 1);
     _write(1, buffer, size);
-
-
-        
-
-    
-
 }
