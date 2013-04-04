@@ -70,6 +70,19 @@ int find_newline(char * buf, int size)
     return pos;
 }
 
+//prints next string from buffer, moves buffer, returns size of data printed
+int print_next_string(char * buf, int size)
+{
+    int pos = find_newline(buf, size);
+    int string_size = pos + 1;
+    char * str = malloc(string_size);
+    str = memcpy(str, buf, string_size);
+    memmove(buf, buf + string_size, size - string_size);
+    _write(1, str, string_size);
+    _write(1, str, string_size);
+    return string_size;
+}
+
 int main(int argc, char * argv[])
 {
     int k = _atoi(argv[1]);
@@ -104,19 +117,28 @@ int main(int argc, char * argv[])
         }
         else
         {
-            char * str = malloc(pos + 1);
-            str = memcpy(str, buffer, pos + 1);
-            _write(1, str, pos + 1);
-            //_write(1, str, pos + 1);
-            buffer = memmove(buffer, buffer + pos + 1, size - pos - 1);
-            expected = pos + 1;
-            res = _read(0, buffer + size - pos - 1, expected);
+            //print string before '\n'
+            //move the rest of string to the begin
+            //fill the end of buffer with data from stdin
+            //find new position of '\n'
+            expected = print_next_string(buffer, size);
+            res = _read(0, buffer + size - expected, expected);
             pos = find_newline(buffer, size);
         }
     }
-    //res != size, in buffer some string from end of stream
-    _write(1, buffer, res);
-    //_write(1, buffer, res);
+    //res != expected, in buffer some string from end of stream
+    //print every string
+    size = size - expected + res;
+    while (pos != -1)
+    {
+        size -= print_next_string(buffer, size);
+        pos = find_newline(buffer, size);
+    }
+    //in buffer some string without \n
+    _write(1, buffer, size);
+    _write(1, "\n", 1);
+    _write(1, buffer, size);
+
 
         
 
