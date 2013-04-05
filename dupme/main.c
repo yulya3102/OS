@@ -80,6 +80,7 @@ int print_next_string(char * buf, int size)
     memmove(buf, buf + string_size, size - string_size);
     _write(1, str, string_size);
     _write(1, str, string_size);
+    free(str);
     return string_size;
 }
 
@@ -147,4 +148,5 @@ int main(int argc, char * argv[])
     _write(1, buffer, size);
     _write(1, "\n", 1);
     _write(1, buffer, size);
+    free(buffer);
 }
