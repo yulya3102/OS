@@ -2,7 +2,7 @@
 
 
 for name in "$@"; do
-    echo 'Enter new name for file "' "$name" '":'
+    echo -ne 'Enter new name for file "'$name'": '
     read -e new_name
     if [ "$new_name" ]; then
         mv "$name" "$new_name"
