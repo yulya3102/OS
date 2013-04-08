@@ -1,0 +1,8 @@
+#!/bin/sh
+
+
+for name in $@; do
+    echo 'Enter new name for file "' "$name" '":'
+    read -e new_name
+    mv "$name" "$new_name"
+done
