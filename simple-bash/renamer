@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-for name in $@; do
+for name in "$@"; do
     echo 'Enter new name for file "' "$name" '":'
     read -e new_name
     if [ "$new_name" ]; then
