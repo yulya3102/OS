@@ -1,0 +1,8 @@
+#!/bin/sh
+#watchthis 1 ps u
+interval=$1
+shift 1
+while true; do
+    sleep $interval
+    $@
+done
