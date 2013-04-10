@@ -4,9 +4,16 @@ interval=$1
 shift
 
 old=`$@`
+echo "$old"
 while true; do
     sleep $interval
     new=`$@`
-    diff -u <( echo "$old" ) <( echo "$new" )
+    udiff=`diff -u <( echo "$old" ) <( echo "$new" )`
+    if [ "$udiff" ]; then
+        echo "New output:"
+        echo "$new"
+        echo "Unified diff:"
+        echo "$udiff"
+    fi
     old="$new"
 done
