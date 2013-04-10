@@ -1,8 +1,12 @@
-#!/bin/sh
-#watchthis 1 ps u
+#!/usr/bin/env bash
+
 interval=$1
-shift 1
+shift
+
+old=`$@`
 while true; do
     sleep $interval
-    $@
+    new=`$@`
+    diff -u <( echo "$old" ) <( echo "$new" )
+    old="$new"
 done
