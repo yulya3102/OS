@@ -2,11 +2,12 @@
 
 scan() {
     for name in "$@"; do
-        #echo "Scan $name"
-        if [ -e "$name" ]; then
-            echo "$name"
-            if [ -d "$name" ]; then
-                scan "$name"/*
+        if [ -d "$name" ]; then
+            scan "$name"/*
+        fi
+        if ! [ -e "$name" ]; then
+            if [ -L "$name" ]; then
+                echo "Broken symbolic link: $name"
             fi
         fi
     done
