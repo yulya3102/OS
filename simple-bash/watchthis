@@ -8,10 +8,10 @@ echo "$old"
 while true; do
     sleep $interval
     new=`$@`
+    echo "New output:"
+    echo "$new"
     udiff=`diff -u <( echo "$old" ) <( echo "$new" )`
     if [ "$udiff" ]; then
-        echo "New output:"
-        echo "$new"
         echo "Unified diff:"
         echo "$udiff"
     fi
