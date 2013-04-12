@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+if ! [ "$2" ]; then
+    exit 1
+fi
+res=`find "$2" -mtime +"$1"`
+if [ "$res" ]; then
+    exit 0
+else
+    exit 1
+fi

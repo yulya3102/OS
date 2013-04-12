@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+for file in "$@"; do
+    find "$file" -mtime -5 | ./filter -- ./older 2
+done
