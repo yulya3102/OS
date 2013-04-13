@@ -132,7 +132,10 @@ void main(int argc, char ** argv) {
                     if (EOF) {
                         // r == 0 so we don't need to increase current_size
                         if (current_size > 0 && buffer[current_size - 1] != separator) {
-                            // fixme: if current_size == buffer_size we will crash :(
+                            // in buffer - string without separators
+                            if (current_size == buffer_size) {
+                                _exit(1);
+                            }
                             buffer[current_size] = separator;
                             current_size = current_size + 1;
                             pos = find_separator(separator, buffer, current_size);
