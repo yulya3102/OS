@@ -2,29 +2,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-int _read(int fd, char * buf, int size)
-{
-    int done = 0;
-    while (done < size)
-    {
-        int res = read(fd, buf + done, size - done);
-        if (res == -1)
-        {
-            perror("read failed");
-            _exit(1);
-        }
-        else if (res == 0)
-        {
-            break;
-        }
-        else
-        {
-            done = done + res;
-        }
-    }
-    return done;
-}
-
 int find_separator(char separator, char * buf, int size)
 {
     int pos = 0;
@@ -83,6 +60,19 @@ void run(char ** argv, int argv_size, char * buffer, int size) {
     }
 }
 
+int EOF = 0;
+
+int get_new_data(char * buffer, int max_size) {
+    if (max_size == 0) {
+        return 0;
+    }
+    int r = read(0, buffer, max_size);
+    if (r == 0) {
+        EOF = 1;
+    }
+    return r;
+}
+
 void main(int argc, char ** argv) {
     int buffer_size = 4 * 1024;
     char separator = '\n';
@@ -113,10 +103,9 @@ void main(int argc, char ** argv) {
         command[command_size - 1] = NULL;
 
         char * buffer = malloc(buffer_size);
-        int eof = 0;
-        int r = read(0, buffer, buffer_size);   
+        int r = get_new_data(buffer, buffer_size);
         int current_size = r;                   
-        if (r == 0) {   //input is empty
+        if (EOF) {   // input is empty
             return;
         }
 
@@ -134,23 +123,30 @@ void main(int argc, char ** argv) {
             
             // read new data
             memmove(buffer, buffer + from, current_size - from);
-            if (!eof) {
-                r = _read(0, buffer + (current_size - from), from); // _read because we really need new data
-                if (r < from) {
-                    eof = 1;
-                    current_size = current_size - from + r;
-                    buffer[current_size] = separator;
-                    current_size = current_size + 1;
-                }
-                else {
-                    current_size = current_size - from + r;
+            if (!EOF) {
+                // we don't have separators in buffer, so we have to read new data until we find separator
+                // in buffer now (current_size - from) bytes, so we can read (buffer_size - (current_size - from)) bytes
+                current_size = current_size - from;
+                while (pos == -1) {
+                    r = get_new_data(buffer + current_size, buffer_size - current_size);
+                    if (EOF) {
+                        // r == 0 so we don't need to increase current_size
+                        if (current_size > 0 && buffer[current_size - 1] != separator) {
+                            // fixme: if current_size == buffer_size we will crash :(
+                            buffer[current_size] = separator;
+                            current_size = current_size + 1;
+                            pos = find_separator(separator, buffer, current_size);
+                        }
+                        break;
+                    }
+                    current_size = current_size + r;
+                    pos = find_separator(separator, buffer, current_size);
                 }
             }
             else {
-                current_size = current_size - from;
+                // we don't have data in buffer and we can't read new data
+                break;
             }
-
-            pos = find_separator(separator, buffer, current_size);
         }
 
         
