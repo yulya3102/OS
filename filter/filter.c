@@ -144,6 +144,9 @@ void main(int argc, char ** argv) {
                     }
                     current_size = current_size + r;
                     pos = find_separator(separator, buffer, current_size);
+                    if (pos == -1 && current_size == buffer_size) {
+                        _exit(1);
+                    }
                 }
             }
             else {
