@@ -109,8 +109,8 @@ void main(int argc, char ** argv) {
         for (i = optind; i < argc; i++) {
             command[i - optind] = argv[i];
         }
-        //command[command_size - 1] is empty
-        command[command_size] = NULL;
+        //command[command_size - 2] is empty
+        command[command_size - 1] = NULL;
 
         char * buffer = malloc(buffer_size);
         int eof = 0;
