@@ -79,7 +79,34 @@ int print_next_string(char * buf, int size)
     return string_size;
 }
 
-// TODO: rewrite it using new _read()
+// read all string and delete it, then read new data
+int ignore_string(char * buffer, int max_size) {
+    // delete all data until '\n'
+    int current_size = 0;
+    int pos = -1;
+    while (pos == -1) {
+        if (current_size == max_size) { // buffer is full, but still doesn't contain newline
+            current_size = 0;
+        }
+        int r = _read(buffer + current_size, max_size - current_size);
+        current_size = currentesize + r;
+        pos = find_newline(buffer, current_size);
+        if (EOF) {
+            if (pos == -1) { // ignore this string
+                return 0;
+            }
+            else {
+                break;
+            }
+        }
+    }
+    int ignored_string_size = pos + 1;
+    memmove(buffer, buffer + ignored_string_size, current_size - ignored_string_size);
+    current_size = current_size - ignored_string_size;
+    return current_size;
+}
+
+// TODO: rewrite it using new _read() and ignore_string()
 int main(int argc, char * argv[])
 {
     int k = _atoi(argv[1]);
