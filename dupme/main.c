@@ -65,18 +65,15 @@ int find_newline(char * buf, int size)
     return pos;
 }
 
-//prints next string from buffer, moves buffer, returns size of data printed
-int print_next_string(char * buf, int size)
-{
-    int pos = find_newline(buf, size);
+// prints next string from buffer, moves buffer, returns current buffer size
+int print_next_string(char * buffer, int current_size) {
+    int pos = find_newline(buffer, current_size);
     int string_size = pos + 1;
-    char * str = malloc(string_size);
-    str = memcpy(str, buf, string_size);
-    memmove(buf, buf + string_size, size - string_size);
-    _write(1, str, string_size);
-    _write(1, str, string_size);
-    free(str);
-    return string_size;
+    _write(1, buffer, string_size);
+    _write(1, buffer, string_size);
+    current_size = current_size - string_size;
+    memmove(buffer, buffer + string_size, current_size);
+    return current_size;
 }
 
 // read all string and delete it, then read new data
