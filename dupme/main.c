@@ -20,25 +20,17 @@ void _write(int fd, char * buf, int size)
     }
 }
 
-int _read(int fd, char * buf, int size)
+int EOF = 0;
+
+// read data and set EOF
+int _read(char * buffer, int max_size)
 {
-    int done = 0;
-    while (done < size)
-    {
-        int res = read(fd, buf + done, size - done);
-        if (res == -1)
-        {
-            perror("read failed");
-            _exit(1);
-        }
-        else if (res == 0)
-        {
-            break;
-        }
-        else
-        {
-            done = done + res;
-        }
+    if (max_size == 0) {
+        return 0;
+    }
+    int done = read(0, buffer, max_size);
+    if (done == 0) {
+        EOF = 1;
     }
     return done;
 }
@@ -84,6 +76,7 @@ int print_next_string(char * buf, int size)
     return string_size;
 }
 
+// TODO: rewrite it using new _read()
 int main(int argc, char * argv[])
 {
     int k = _atoi(argv[1]);
