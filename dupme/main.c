@@ -50,6 +50,9 @@ int _atoi(char * pNumber)
 
 int find_newline(char * buf, int size)
 {
+    if (size == 0) {
+        return -1;
+    }
     int pos = 0;
     while (pos < size && buf[pos] != '\n')
     {
