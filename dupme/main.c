@@ -23,6 +23,7 @@ void _write(int fd, char * buf, int size)
 int EOF = 0;
 
 // read data and set EOF
+// FIXME: done == -1
 int _read(char * buffer, int max_size)
 {
     if (max_size == 0) {
@@ -86,7 +87,7 @@ int ignore_string(char * buffer, int max_size) {
             current_size = 0;
         }
         int r = _read(buffer + current_size, max_size - current_size);
-        current_size = currentesize + r;
+        current_size = current_size + r;
         pos = find_newline(buffer, current_size);
         if (EOF) {
             if (pos == -1) { // ignore this string
@@ -103,70 +104,67 @@ int ignore_string(char * buffer, int max_size) {
     return current_size;
 }
 
-// TODO: rewrite it using new _read() and ignore_string()
 int main(int argc, char * argv[])
 {
     int k = _atoi(argv[1]);
     int size = k + 1;
     char * buffer = malloc(size);
-    int expected = size;
-    int res = _read(0, buffer, expected);
-    //if it contains '\n' - print it
-    //else ignore all string until '\n'
-    int pos = find_newline(buffer, size);
-    //before cycle: in buffer - new string
-    //in pos - position of '\n'
-    while (res == expected)
-    {
-        if (pos == -1) //ignore string
-        {
-            while (pos == -1 && res == expected)
-            {
-                expected = size;
-                res = _read(0, buffer, expected);
-                pos = find_newline(buffer, res);
+
+    // read new data, find newline
+    // while buffer doesn't contain newline, read new data until it's full
+    // if we've found newline - print string
+    // else ignore string
+
+    int current_size = 0;
+    int pos = -1;
+    while (!EOF) { // buffer is empty and we still can read new data
+        // read new data until buffer contains newline
+        while (pos == -1) {
+            // buffer is full, but doesn't contain newline
+            // so ignore this string
+            if (current_size == size) { 
+                current_size = ignore_string(buffer, current_size);
             }
-            //in buffer - end of ignored string + some data from stream
-            //delete the rest from ignored string
-            //move end of buffer to the begin
-            //fill the end of buffer with new data
-            //find new position of '\n'
-            int string_size = pos + 1;
-            memmove(buffer, buffer + string_size, size - string_size);
-            if (res != expected)
-            {
-                expected = size;
-                res = 0;
+            // read new data
+            int r = _read(buffer + current_size, size - current_size);
+            current_size = current_size + r;
+            pos = find_newline(buffer, current_size);
+            // we can't read new data so we need to break
+            if (EOF) {
+                if (current_size == 0) {
+                    break;
+                }
+                // if last symbol is not newline then add it to the end
+                if (buffer[current_size] != '\n') {
+                    // buffer can be full
+                    // in this case print next string and add newline
+                    // or ignore last string if it doesn't contain newline
+                    if (current_size == size) {
+                        if (pos != -1) {
+                            current_size = print_next_string(buffer, current_size);
+                            if (current_size > 0) { // buffer is not empty
+                                buffer[current_size] = '\n';
+                                current_size = current_size + 1;
+                            }
+                        }
+                        else {
+                            current_size = ignore_string(buffer, current_size);
+                        }
+                    }
+                    else {
+                        buffer[current_size] = '\n';
+                        current_size = current_size + 1;
+                    }
+                }
+                pos = find_newline(buffer, current_size);
                 break;
             }
-            expected = string_size;
-            res = _read(0, buffer + size - expected, expected);
         }
-        else
-        {
-            //print string before '\n'
-            //move the rest of string to the begin
-            //fill the end of buffer with data from stdin
-            //find new position of '\n'
-            expected = print_next_string(buffer, size);
-            res = _read(0, buffer + size - expected, expected);
+        // write all data we can process
+        while (pos != -1) {
+            current_size = print_next_string(buffer, current_size);
+            pos = find_newline(buffer, current_size);
         }
-        //last parameter is size because outside of this cycle it will be anyway refreshed
-        pos = find_newline(buffer, size);
     }
-    //res != expected, in buffer some string from end of stream
-    //print every string
-    size = size - expected + res;
-    pos = find_newline(buffer, size);
-
-    while (pos != -1)
-    {
-        size -= print_next_string(buffer, size);
-        pos = find_newline(buffer, size);
-    }
-    //in buffer some string without \n
-    _write(1, buffer, size);
-    _write(1, "\n", 1);
-    _write(1, buffer, size);
     free(buffer);
 }
