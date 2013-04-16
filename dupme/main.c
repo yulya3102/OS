@@ -23,13 +23,16 @@ void _write(int fd, char * buf, int size)
 int EOF = 0;
 
 // read data and set EOF
-// FIXME: done == -1
 int _read(char * buffer, int max_size)
 {
     if (max_size == 0) {
         return 0;
     }
     int done = read(0, buffer, max_size);
+    if (done == -1) {
+        perror("read failed");
+        _exit(1);
+    }
     if (done == 0) {
         EOF = 1;
     }
