@@ -18,6 +18,7 @@ int find_symbol(char symbol, char * buffer, int size) {
     return -1;
 }
 
+// never return
 void run(std::deque<char *> &argv) {
     char ** command = malloc((argv.size() + 1) * sizeof(char *));
     for (int i = 0; i < argv.size(); i++) {
@@ -42,6 +43,7 @@ void run(std::deque<char *> &argv) {
     } 
 }
 
+// never return
 void process_deque(std::deque<std::deque<char *> >& argv) {
     if (argv.size() < 1) {
         write(1, "error", 5);
@@ -126,6 +128,9 @@ void process_line(char * string, int size) {
     do {
         tpid = wait(&status);
     } while (tpid != pid);
+    for (int i = 0; i < str.size(); i++) {
+        free(str[i]);
+    }
 }
 
 int eof = 0;
