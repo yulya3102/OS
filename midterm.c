@@ -113,13 +113,19 @@ void process_line(char * string, int size) {
     str.pop_front();
     str.pop_front();
     std::deque<std::deque<char *> > commands = split('|', str);
-    if (fork() == 0) {
+    int pid = fork();
+    if (pid == 0) {
         if (chdir(dir) == -1) {
             perror("chdir failed");
             _exit(1);
         }
         process_deque(commands);
     }
+    pid_t tpid;
+    int status;
+    do {
+        tpid = wait(&status);
+    } while (tpid != pid);
 }
 
 int eof = 0;
