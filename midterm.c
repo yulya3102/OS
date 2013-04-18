@@ -25,12 +25,13 @@ void run(std::deque<char *> &argv) {
         command[i] = argv[i];
     }
     command[argv.size()] = NULL;
+    if (execvp(argv[0], command) == -1) {
+        perror("exec failed");
+        _exit(1);
+    }
+/*
     int pid = fork();
     if (pid == 0) {
-        if (execvp(argv[0], command) == -1) {
-            perror("exec failed");
-            _exit(1);
-        }
     }
     else {
         pid_t tpid;
@@ -41,22 +42,34 @@ void run(std::deque<char *> &argv) {
         free(command);
         _exit(0);
     } 
+    */
 }
 
-// never return
 void process_deque(std::deque<std::deque<char *> >& argv) {
     if (argv.size() < 1) {
         write(1, "error", 5);
         _exit(1);
     }
     if (argv.size() == 1) {
-        run(argv[0]);
+        int pid = fork();
+        if (pid == 0) {
+            run(argv[0]);
+        }
+        else {
+            pid_t tpid;
+            int status;
+            do {
+                tpid = wait(&status);
+            } while (tpid != pid);
+            return;
+        }
     }
     else {
         int pipefd[2];
         pipe(pipefd);
 
-        if (fork() == 0) {
+        int pid = fork();
+        if (pid == 0) {
             dup2(pipefd[1], 1);
             close(pipefd[0]);
             close(pipefd[1]);
@@ -69,6 +82,12 @@ void process_deque(std::deque<std::deque<char *> >& argv) {
             close(pipefd[1]);
             argv.pop_front();
             process_deque(argv);
+            pid_t tpid;
+            int status;
+            do {
+                tpid = wait(&status);
+            } while (tpid != pid);
+            return;
         }
     }
 }
@@ -122,6 +141,7 @@ void process_line(char * string, int size) {
             _exit(1);
         }
         process_deque(commands);
+        _exit(0);
     }
     pid_t tpid;
     int status;
