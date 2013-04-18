@@ -32,7 +32,7 @@ void run(std::deque<char *> &argv) {
     }
 }
 
-int process_deque(std::deque<std::deque<char *> >& argv) {
+int process_deque(int wpid, std::deque<std::deque<char *> >& argv) {
     if (argv.size() < 1) {
         write(1, "error", 5);
         _exit(1);
@@ -43,6 +43,10 @@ int process_deque(std::deque<std::deque<char *> >& argv) {
             run(argv[0]);
         }
         else {
+            if (wpid != -1) {
+                int status;
+                waitpid(wpid, &status, 0);
+            }
             return pid;
         }
     }
@@ -63,13 +67,11 @@ int process_deque(std::deque<std::deque<char *> >& argv) {
             close(pipefd[0]);
             close(pipefd[1]);
             argv.pop_front();
-            int cpid = process_deque(argv);
-            pid_t tpid;
-            int status;
-            do {
-                tpid = waitpid(cpid, &status, 0);
-            } while (tpid != cpid);
-            return pid;
+            if (wpid != -1) {
+                int status;
+                waitpid(wpid, &status, 0);
+            }
+            return process_deque(pid, argv);
         }
     }
 }
@@ -122,7 +124,7 @@ void process_line(char * string, int size) {
             perror("chdir failed");
             _exit(1);
         }
-        int cpid = process_deque(commands);
+        int cpid = process_deque(-1, commands);
         pid_t tpid;
         int status;
         do {
