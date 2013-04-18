@@ -1,3 +1,4 @@
+#include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -29,23 +30,9 @@ void run(std::deque<char *> &argv) {
         perror("exec failed");
         _exit(1);
     }
-/*
-    int pid = fork();
-    if (pid == 0) {
-    }
-    else {
-        pid_t tpid;
-        int status;
-        do {
-            tpid = wait(&status);
-        } while (tpid != pid);
-        free(command);
-        _exit(0);
-    } 
-    */
 }
 
-void process_deque(std::deque<std::deque<char *> >& argv) {
+int process_deque(std::deque<std::deque<char *> >& argv) {
     if (argv.size() < 1) {
         write(1, "error", 5);
         _exit(1);
@@ -56,12 +43,7 @@ void process_deque(std::deque<std::deque<char *> >& argv) {
             run(argv[0]);
         }
         else {
-            pid_t tpid;
-            int status;
-            do {
-                tpid = wait(&status);
-            } while (tpid != pid);
-            return;
+            return pid;
         }
     }
     else {
@@ -81,13 +63,13 @@ void process_deque(std::deque<std::deque<char *> >& argv) {
             close(pipefd[0]);
             close(pipefd[1]);
             argv.pop_front();
-            process_deque(argv);
+            int cpid = process_deque(argv);
             pid_t tpid;
             int status;
             do {
-                tpid = wait(&status);
-            } while (tpid != pid);
-            return;
+                tpid = waitpid(cpid, &status, 0);
+            } while (tpid != cpid);
+            return pid;
         }
     }
 }
@@ -140,13 +122,18 @@ void process_line(char * string, int size) {
             perror("chdir failed");
             _exit(1);
         }
-        process_deque(commands);
+        int cpid = process_deque(commands);
+        pid_t tpid;
+        int status;
+        do {
+            tpid = waitpid(cpid, &status, 0);
+        } while (tpid != cpid);
         _exit(0);
     }
     pid_t tpid;
     int status;
     do {
-        tpid = wait(&status);
+        tpid = waitpid(pid, &status, 0);
     } while (tpid != pid);
     for (int i = 0; i < str.size(); i++) {
         free(str[i]);
