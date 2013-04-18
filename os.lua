@@ -34,7 +34,9 @@ Socket.read = function(args)
         return nil
     end
     local result = read_fd(socket.fd, socket.connections[id])    
-    socket.connections[id] = socket.connections[id] + string.len(result)
+    if result ~= nil then
+        socket.connections[id] = socket.connections[id] + string.len(result)
+    end
     return result
 end
 
