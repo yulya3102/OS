@@ -79,10 +79,13 @@ end
 
 kernel = function()
     local runnable = List.new()
+    local unrunnable = List.new()
     List.pushright(runnable, process(process1, nil))
     List.pushright(runnable, process(process2, nil))
     List.pushright(runnable, process(process2, nil))
     while not List.is_empty(runnable) do
+        -- run next runnable
+        -- in runnable - processes
         local proc = List.popleft(runnable)
         local context = proc.proc(proc.arg)
         if context ~= nil then
@@ -95,13 +98,29 @@ kernel = function()
                 proc = process(context.cont, Socket.connect(context.args))
                 List.pushright(runnable, proc)
             elseif context.tag == syscall_tags.read then
-                proc = process(context.cont, Socket.read(context.args))
-                List.pushright(runnable, proc)
+                List.pushright(unrunnable, context)
             elseif context.tag == syscall_tags.write then
                 proc = process(context.cont, Socket.write(context.args))
                 List.pushright(runnable, proc)
             else
                 print("unknown syscall")
+            end
+        end
+        -- check every unrunnable
+        -- in unrunnable - contexts
+        local n = List.size(unrunnable)
+        for i = 1, n, 1 do
+            local context = List.popleft(unrunnable)
+            if context.tag ~= syscall_tags.read then
+                -- how did it get there?
+                print("error: sycall_tag ", context.tag, " in unrunnable")
+            else
+                local result = Socket.read(context.args)
+                if result ~= nil then
+                    List.pushright(runnable, process(context.cont, result))
+                else
+                    List.pushright(unrunnable, context)
+                end
             end
         end
     end
