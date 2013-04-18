@@ -83,12 +83,12 @@ kernel = function()
     List.pushright(runnable, process(process1, nil))
     List.pushright(runnable, process(process2, nil))
     List.pushright(runnable, process(process2, nil))
-    while not List.is_empty(runnable) do
+    while not List.is_empty(runnable) or not List.is_empty(unrunnable) do
         -- run next runnable
         -- in runnable - processes
-        local proc = List.popleft(runnable)
-        local context = proc.proc(proc.arg)
-        if context ~= nil then
+        local proc = not List.is_empty(runnable) and List.popleft(runnable) or nil
+        if proc ~= nil then
+            local context = proc.proc(proc.arg)
             if context.tag == syscall_tags.exit then
                 print("exit process")
             elseif context.tag == syscall_tags.create then
