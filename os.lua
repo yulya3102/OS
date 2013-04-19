@@ -12,30 +12,26 @@ Socket = {}
 Socket.new = function(name)
     print("creating socket ", name)
     local fd = io.tmpfile()
-    sockets[name] = { fd = fd, connections = {}, number = 0 }
+    sockets[name] = { fd = fd, connections = {} }
     return fd
 end
 
-Socket.connect = function(name)
+Socket.connect = function(name, pid)
     print("connecting to socket ", name)
     local socket = sockets[name]
-    socket.number = socket.number + 1
-    socket.connections[socket.number] = 0
-    return socket.number
+    socket.connections[pid] = 0
 end
 
-Socket.read = function(args)
-    local name = args.name
+Socket.read = function(name, pid)
     print("reading from socket ", name)
-    local id = args.id
     local socket = sockets[name]
     if socket == nil then
         print("socket doesn't exist")
         return nil
     end
-    local result = read_fd(socket.fd, socket.connections[id])    
+    local result = read_fd(socket.fd, socket.connections[pid])    
     if result ~= nil then
-        socket.connections[id] = socket.connections[id] + string.len(result)
+        socket.connections[pid] = socket.connections[pid] + string.len(result)
     end
     return result
 end
@@ -61,7 +57,7 @@ end
 process1 = function(arg)
     return context(syscall_tags.create, "socket1", function(fd)
         return context(syscall_tags.write, { name = "socket1", data = "data_in_socket1" }, function(arg)
-            return context(syscall_tags.connect, "socket1", function(socket_id)
+            return context(syscall_tags.connect, "socket1", function(arg)
                 return context(syscall_tags.write, { name = "socket1", data = "more_data_in_socket1" }, function(arg)
                     return context(syscall_tags.exit, nil, nil)
                 end)
@@ -71,10 +67,10 @@ process1 = function(arg)
 end
 
 process2 = function(arg)
-    return context(syscall_tags.connect, "socket1", function(socket_id)
-        return context(syscall_tags.read, { name = "socket1", id = socket_id }, function(string)
+    return context(syscall_tags.connect, "socket1", function(arg)
+        return context(syscall_tags.read, "socket1", function(string)
             print(string)
-            return context(syscall_tags.read, { name = "socket1", id = socket_id }, function(string)
+            return context(syscall_tags.read, "socket1", function(string)
                 print(string)
                 return context(syscall_tags.exit, nil, nil)
             end)
@@ -117,11 +113,10 @@ kernel = function()
                 List.pushright(runnable, pid)
                 processes[pid] = proc
             elseif context.tag == syscall_tags.connect then
-                proc = process(context.cont, Socket.connect(context.args))
+                proc = process(context.cont, Socket.connect(context.args, pid))
                 List.pushright(runnable, pid)
                 processes[pid] = proc
             elseif context.tag == syscall_tags.read then
-                -- TODO
                 List.pushright(unrunnable, pid)
                 processes[pid] = context
             elseif context.tag == syscall_tags.write then
@@ -142,7 +137,7 @@ kernel = function()
                 -- how did it get there?
                 print("error: sycall_tag ", context.tag, " in unrunnable")
             else
-                local result = Socket.read(context.args)
+                local result = Socket.read(context.args, pid)
                 if result ~= nil then
                     List.pushright(runnable, pid)
                     processes[pid] = process(context.cont, result)
