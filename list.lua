@@ -4,6 +4,34 @@ List.new = function()
 	return { first = 0, last = -1 }
 end
 
+List.get = function(list, value)
+    -- O(n) :(((
+    if List.is_empty(list) then
+        return nil
+    end
+    local stack = List.new()
+    repeat
+        local item = List.popleft(list)
+        if item == value then
+            if List.is_empty(stack) then
+                return item
+            end
+            repeat
+                List.pushleft(list, List.popright(stack))
+            until List.is_empty(stack)
+            return item
+        end
+        List.pushright(stack, item)
+    until List.is_empty(list)
+    if List.is_empty(stack) then
+        return nil
+    end
+    repeat
+        List.pushleft(list, List.popright(stack))
+    until List.is_empty(stack)
+    return nil
+end
+
 function List.pushleft (list, value)
 	local first = list.first - 1
 	list.first = first
@@ -41,23 +69,5 @@ end
 function List.size (list)
 	return list.last - list.first + 1
 end
-
---[[function List.popleft_with_tag (list, tag)
-	local stack = List.new()
-	local item = nil
-	local result = nil
-	repeat
-		item = not List.is_empty(list) and List.popleft(list) or nil
-		if item ~= nil and item.tag == tag then
-			result = item
-			break
-		end
-		if item ~= nil then Lust.pushright(stack, item) end
-	until item == nil
-	while not List.is_empty(stack) do
-		List.pushleft(list, List.popright(stack))
-	end
-	return result
-end]]
 
 return List

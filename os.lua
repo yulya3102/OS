@@ -103,6 +103,7 @@ kernel = function()
         -- run next runnable
         -- in runnable - processes
         local pid = not List.is_empty(runnable) and List.popleft(runnable) or nil
+        local updated_socket = nil
         if pid ~= nil then
             local proc = processes[pid]
             local context = proc.proc(proc.arg)
@@ -117,32 +118,40 @@ kernel = function()
                 List.pushright(runnable, pid)
                 processes[pid] = proc
             elseif context.tag == syscall_tags.read then
-                List.pushright(unrunnable, pid)
-                processes[pid] = context
+                local result = Socket.read(context.args, pid)
+                if result == nil then
+                    List.pushright(unrunnable, pid)
+                    processes[pid] = context
+                else
+                    proc = process(context.cont, result)
+                    List.pushright(runnable, pid)
+                    processes[pid] = proc
+                end
             elseif context.tag == syscall_tags.write then
                 proc = process(context.cont, Socket.write(context.args))
                 List.pushright(runnable, pid)
                 processes[pid] = proc
+                updated_socket = context.args.name
             else
                 print("unknown syscall")
             end
         end
-        -- check every unrunnable
-        -- in unrunnable - contexts
-        local n = List.size(unrunnable)
-        for i = 1, n, 1 do
-            local pid = List.popleft(unrunnable)
-            local context = processes[pid]
-            if context.tag ~= syscall_tags.read then
-                -- how did it get there?
-                print("error: sycall_tag ", context.tag, " in unrunnable")
-            else
-                local result = Socket.read(context.args, pid)
-                if result ~= nil then
-                    List.pushright(runnable, pid)
-                    processes[pid] = process(context.cont, result)
-                else
-                    List.pushright(unrunnable, pid)
+
+        if updated_socket ~= nil then
+            local socket = sockets[updated_socket]
+            for connected_pid, pos in pairs(socket.connections) do
+                -- if process with pid = connected_pid is in unrunnable then run it
+                local pid = List.get(unrunnable, connected_pid)
+                if pid ~= nil then
+                    local context = processes[pid]
+                    if context.tag ~= syscall_tags.read then
+                        -- how did it get there?
+                        print("error: sycall_tag", context.tag, "in unrunnable")
+                    else
+                        local result = Socket.read(context.args, pid)
+                        List.pushright(runnable, pid)
+                        processes[pid] = process(context.cont, result)
+                    end
                 end
             end
         end
