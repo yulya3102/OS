@@ -58,8 +58,11 @@ process1 = function(arg)
     return context(syscall_tags.create, "socket1", function(fd)
         return context(syscall_tags.write, { name = "socket1", data = "data_in_socket1" }, function(arg)
             return context(syscall_tags.connect, "socket1", function(arg)
-                return context(syscall_tags.write, { name = "socket1", data = "more_data_in_socket1" }, function(arg)
-                    return context(syscall_tags.exit, nil, nil)
+                return context(syscall_tags.read, "socket1", function(string)
+                    print(string)
+                    return context(syscall_tags.write, { name = "socket1", data = "more_data_in_socket1" }, function(arg)
+                        return context(syscall_tags.exit, nil, nil)
+                    end)
                 end)
             end)
         end)
@@ -143,6 +146,7 @@ kernel = function()
                 -- if process with pid = connected_pid is in unrunnable then run it
                 local pid = List.get(unrunnable, connected_pid)
                 if pid ~= nil then
+                    print("unrunnable process can be updated", pid)
                     local context = processes[pid]
                     if context.tag ~= syscall_tags.read then
                         -- how did it get there?
