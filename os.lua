@@ -84,30 +84,48 @@ process = function(proc, arg)
     return { proc = proc, arg = arg }
 end
 
+last_pid = 0
+
+next_pid = function()
+    last_pid = last_pid + 1
+    return last_pid
+end
+
 kernel = function()
+    local processes = {}
     local runnable = List.new()
     local unrunnable = List.new()
-    List.pushright(runnable, process(process1, nil))
-    List.pushright(runnable, process(process2, nil))
+    List.pushright(runnable, next_pid())
+    processes[last_pid] = process(process1, nil)
+    List.pushright(runnable, next_pid())
+    processes[last_pid] = process(process2, nil)
+    List.pushright(runnable, next_pid())
+    processes[last_pid] = process(process2, nil)
     while not List.is_empty(runnable) or not List.is_empty(unrunnable) do
         -- run next runnable
         -- in runnable - processes
-        local proc = not List.is_empty(runnable) and List.popleft(runnable) or nil
-        if proc ~= nil then
+        local pid = not List.is_empty(runnable) and List.popleft(runnable) or nil
+        if pid ~= nil then
+            local proc = processes[pid]
             local context = proc.proc(proc.arg)
             if context.tag == syscall_tags.exit then
                 print("exit process")
             elseif context.tag == syscall_tags.create then
                 proc = process(context.cont, Socket.new(context.args))
-                List.pushright(runnable, proc)
+                List.pushright(runnable, pid)
+                processes[pid] = proc
             elseif context.tag == syscall_tags.connect then
                 proc = process(context.cont, Socket.connect(context.args))
-                List.pushright(runnable, proc)
+                List.pushright(runnable, pid)
+                processes[pid] = proc
             elseif context.tag == syscall_tags.read then
-                List.pushright(unrunnable, context)
+                -- TODO
+                List.pushright(unrunnable, pid)
+                processes[pid] = context
             elseif context.tag == syscall_tags.write then
                 proc = process(context.cont, Socket.write(context.args))
-                List.pushright(runnable, proc)
+                List.pushright(runnable, pid)
+                processes[pid] = proc
             else
                 print("unknown syscall")
             end
@@ -116,16 +134,18 @@ kernel = function()
         -- in unrunnable - contexts
         local n = List.size(unrunnable)
         for i = 1, n, 1 do
-            local context = List.popleft(unrunnable)
+            local pid = List.popleft(unrunnable)
+            local context = processes[pid]
             if context.tag ~= syscall_tags.read then
                 -- how did it get there?
                 print("error: sycall_tag ", context.tag, " in unrunnable")
             else
                 local result = Socket.read(context.args)
                 if result ~= nil then
-                    List.pushright(runnable, process(context.cont, result))
+                    List.pushright(runnable, pid)
+                    processes[pid] = process(context.cont, result)
                 else
-                    List.pushright(unrunnable, context)
+                    List.pushright(unrunnable, pid)
                 end
             end
         end
