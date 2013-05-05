@@ -1,0 +1,5 @@
+# Groups and sessions
+./main &
+ps ax -o comm,pid,pgid,sid
+./main | ./main | ./main  &
+ps ax -o comm,pid,pgid,sid
