@@ -3,3 +3,7 @@
 ps ax -o comm,pid,pgid,sid
 ./main | ./main | ./main  &
 ps ax -o comm,pid,pgid,sid
+
+# Daemon
+./main &
+ps ax -o comm,pid,pgid,sid,tty | grep main
