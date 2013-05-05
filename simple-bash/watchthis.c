@@ -23,7 +23,7 @@ void _write(int fd, char * buf, int size)
 const char * old = "/tmp/watchthis_old";
 const char * new = "/tmp/watchthis_new";
 
-void show_unified_diff(char * first, char * second) {
+void show_unified_diff(const char * first, const char * second) {
     int pid = fork();
     if (pid == 0) {
         if (execlp("diff", "diff", "-u", first, second, NULL) == -1) {
@@ -34,12 +34,12 @@ void show_unified_diff(char * first, char * second) {
     waitpid(pid, &status, 0);
 }
 
-void run(char * command, char ** argv, char * output_file) {
-    // int fd = creat(output_file, S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR);
-    int fd = creat(output_file, 0x1a4);
-    dup2(fd, 1);
+void run(char * command, char ** argv, const char * output_file) {
     int pid = fork();
     if (pid == 0) {
+        // int fd = creat(output_file, S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR);
+        int fd = creat(output_file, 0x1a4);
+        dup2(fd, 1);
         if (execvp(command, argv) == -1) {
             perror("exec failed");
         }
@@ -53,19 +53,16 @@ void main(int argc, char ** argv) {
         _write(1, "Usage:\nwatchthis $interval $command", 34);
         _exit(0);
     }
-    int interval = atoi(argv[0]);
-    char * command = argv[1];
-    char ** command_args = argv + 1;
-    //old=`$@`
+    int interval = atoi(argv[1]);
+    char * command = argv[2];
+    char ** command_args = argv + 2;
+    run(command, command_args, old);
     //echo $old
     while (1) {
         sleep(interval);
-        //new=`$@`
-        //udiff=`diff -u <( echo "$old" ) <( echo "$new" )`
-        //if [ "$udiff" ]; then
-        //  echo $new
-        //  echo $udiff
-        //fi
+        run(command, command_args, new);
+        //echo $new
+        show_unified_diff(old, new);
         //old="$new"
     }
 }
