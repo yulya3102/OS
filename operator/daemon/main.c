@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <signal.h>
 #include <pty.h>
 #define _XOPEN_SOURCE
 #define _GNU_SOURCE
@@ -7,6 +8,15 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <string.h>
+
+void handler(int signum)
+{
+    int fd = open("/tmp/daemon.sig", O_WRONLY | O_CREAT, 0644);
+    const char buf[] = "sughup\n";
+    write(fd, buf, strlen(buf));
+    close(fd);
+}
 
 int main() {
     pid_t pid = fork();
@@ -14,15 +24,26 @@ int main() {
         sleep(100);
     } else 
     {
-        setsid(); 
         int master, slave;
         char buf[4096];
+        signal(SIGHUP, &handler);
         int fd = openpty(&master, &slave, buf, NULL, NULL);
-        perror(buf);
-        int ff = open(buf, O_RDWR);
-        close(ff);
-        perror("bar");
-        sleep(100);
+        if (fork())
+        {
+            close(slave);
+            sleep(10);
+            close(master);
+        } else 
+        {
+            close(slave);
+            close(master);
+            setsid(); 
+            perror(buf);
+            int ff = open(buf, O_RDWR);
+            close(ff);
+            perror("bar");
+            sleep(100);
+        }
     }
     return 0;
 }
