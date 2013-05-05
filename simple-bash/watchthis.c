@@ -48,6 +48,17 @@ void run(char * command, char ** argv, const char * output_file) {
     waitpid(pid, &status, 0);
 }
 
+void print_file(const char * path) {
+    int pid = fork();
+    if (pid == 0) {
+        if (execlp("cat", "cat", path, NULL) == -1) {
+            perror("exec failed");
+        }
+    }
+    int status;
+    waitpid(pid, &status, 0);
+}
+
 void main(int argc, char ** argv) {
     if (argc < 2) {
         _write(1, "Usage:\nwatchthis $interval $command", 34);
@@ -57,11 +68,14 @@ void main(int argc, char ** argv) {
     char * command = argv[2];
     char ** command_args = argv + 2;
     run(command, command_args, old);
-    //echo $old
+    _write(1, "Start output:\n", 14);
+    print_file(old);
     while (1) {
         sleep(interval);
         run(command, command_args, new);
-        //echo $new
+        _write(1, "New output:\n", 12);
+        print_file(new);
+        _write(1, "Unified diff:\n", 14);
         show_unified_diff(old, new);
         if (rename(new, old) == -1) {
             perror("rename failed");
