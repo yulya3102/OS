@@ -63,6 +63,8 @@ void main(int argc, char ** argv) {
         run(command, command_args, new);
         //echo $new
         show_unified_diff(old, new);
-        //old="$new"
+        if (rename(new, old) == -1) {
+            perror("rename failed");
+        }
     }
 }
