@@ -19,13 +19,26 @@ void _write(int fd, char * buf, int size)
     }
 }
 
+const char * old = "/tmp/watchthis_old";
+const char * new = "/tmp/watchthis_new";
+
+void show_unified_diff(char * first, char * second) {
+    int pid = fork();
+    if (pid == 0) {
+        execlp("diff", "diff", "-u", first, second, NULL);
+    }
+    int status;
+    waitpid(pid, &status, 0);
+}
+
 void main(int argc, char ** argv) {
     if (argc < 2) {
         _write(1, "Usage:\nwatchthis $interval $command", 34);
         _exit(0);
     }
     int interval = atoi(argv[0]);
-    //shift
+    char * command = argv[1];
+    char ** command_args = argv + 1;
     //old=`$@`
     //echo $old
     while (1) {
