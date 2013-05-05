@@ -1,3 +1,4 @@
+// #include <sys/stat.h>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -25,7 +26,23 @@ const char * new = "/tmp/watchthis_new";
 void show_unified_diff(char * first, char * second) {
     int pid = fork();
     if (pid == 0) {
-        execlp("diff", "diff", "-u", first, second, NULL);
+        if (execlp("diff", "diff", "-u", first, second, NULL) == -1) {
+            perror("exec failed");
+        }
+    }
+    int status;
+    waitpid(pid, &status, 0);
+}
+
+void run(char * command, char ** argv, char * output_file) {
+    // int fd = creat(output_file, S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR);
+    int fd = creat(output_file, 0x1a4);
+    dup2(fd, 1);
+    int pid = fork();
+    if (pid == 0) {
+        if (execvp(command, argv) == -1) {
+            perror("exec failed");
+        }
     }
     int status;
     waitpid(pid, &status, 0);
