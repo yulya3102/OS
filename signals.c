@@ -20,7 +20,7 @@ void full_write(int fd, const char * buffer, int length) {
     }
 }
 
-void sigint_handler(int signum) {
+void sigint_sigaction(int signum, siginfo_t * siginfo, void * ucontext) {
     int fd = open("/dev/tty", O_WRONLY);
     if (fd == -1) {
         perror("opening tty failed");
@@ -36,6 +36,11 @@ void sigint_handler(int signum) {
 }
 
 int main(int argc, char ** agrv) {
-    signal(SIGINT, &sigint_handler);
+    struct sigaction new_action;
+    new_action.sa_sigaction = &sigint_sigaction;
+    sigemptyset(&new_action.sa_mask); // blocked signals
+    new_action.sa_flags = SA_SIGINFO;
+
+    sigaction(SIGINT, &new_action, NULL);
     while (1);
 }
