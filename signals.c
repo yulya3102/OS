@@ -23,6 +23,7 @@ void sigint_sigaction(int signum, siginfo_t * siginfo, void * ucontext) {
 void sigtstp_sigaction(int signum, siginfo_t * siginfo, void * ucontext) {
     const char signame[] = "SIGTSTP";
     print_info_about_signal(signame, siginfo);
+    kill(0, SIGSTOP);
 }
 
 int main(int argc, char ** agrv) {
