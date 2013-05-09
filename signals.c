@@ -6,32 +6,17 @@
 
 int sigint_exit_code = 1; // ???
 
-void full_write(int fd, const char * buffer, int length) {
-    if (length > 0) {
-        int done = 0;
-        while (done < length) {
-            int result = write(fd, buffer + done, length - done);
-            if (result == -1) {
-                perror("write failed");
-                _exit(1);
-            }
-            done = done + result;
-        }
-    }
+void print_info_about_signal(const char * signame, siginfo_t * siginfo) {
+    printf("\n \
+            Signal name: %s\n \
+            Sending process ID: %i\n \
+            Real user ID of sending process: %i\n",
+            signame, siginfo->si_pid, siginfo->si_uid);
 }
 
 void sigint_sigaction(int signum, siginfo_t * siginfo, void * ucontext) {
-    int fd = open("/dev/tty", O_WRONLY);
-    if (fd == -1) {
-        perror("opening tty failed");
-        _exit(1);
-    }
-    const char buf[] = "SIGINT\n";
-    full_write(fd, buf, strlen(buf));
-    if (close(fd) == -1) {
-        perror("closing tty failed");
-        _exit(1);
-    }
+    const char signame[] = "SIGINT";
+    print_info_about_signal(signame, siginfo);
     _exit(sigint_exit_code);
 }
 
