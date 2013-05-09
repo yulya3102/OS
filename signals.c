@@ -20,12 +20,23 @@ void sigint_sigaction(int signum, siginfo_t * siginfo, void * ucontext) {
     _exit(sigint_exit_code);
 }
 
-int main(int argc, char ** agrv) {
-    struct sigaction new_action;
-    new_action.sa_sigaction = &sigint_sigaction;
-    sigemptyset(&new_action.sa_mask); // blocked signals
-    new_action.sa_flags = SA_SIGINFO;
+void sigtstp_sigaction(int signum, siginfo_t * siginfo, void * ucontext) {
+    const char signame[] = "SIGTSTP";
+    print_info_about_signal(signame, siginfo);
+}
 
-    sigaction(SIGINT, &new_action, NULL);
+int main(int argc, char ** agrv) {
+    struct sigaction new_sigint_action;
+    new_sigint_action.sa_sigaction = &sigint_sigaction;
+    sigemptyset(&new_sigint_action.sa_mask); // blocked signals
+    new_sigint_action.sa_flags = SA_SIGINFO;
+
+    struct sigaction new_sigtstp_action;
+    new_sigtstp_action.sa_sigaction = &sigtstp_sigaction;
+    sigemptyset(&new_sigtstp_action.sa_mask);
+    new_sigtstp_action.sa_flags = SA_SIGINFO;
+
+    sigaction(SIGINT, &new_sigint_action, NULL);
+    sigaction(SIGTSTP, &new_sigtstp_action, NULL);
     while (1);
 }
