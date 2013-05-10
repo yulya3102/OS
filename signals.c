@@ -33,6 +33,11 @@ void sigquit_sigaction(int signum, siginfo_t * siginfo, void * ucontext) {
     _exit(sigquit_exit_code);
 }
 
+void sigcont_sigaction(int signum, siginfo_t * siginfo, void * ucontext) {
+    const char signame[] = "SIGCONT";
+    print_info_about_signal(signame, siginfo);
+}
+
 int main(int argc, char ** agrv) {
     struct sigaction new_sigint_action;
     new_sigint_action.sa_sigaction = &sigint_sigaction;
@@ -49,8 +54,14 @@ int main(int argc, char ** agrv) {
     sigemptyset(&new_sigquit_action.sa_mask);
     new_sigquit_action.sa_flags = SA_SIGINFO;
 
+    struct sigaction new_sigcont_action;
+    new_sigcont_action.sa_sigaction = &sigcont_sigaction;
+    sigemptyset(&new_sigcont_action.sa_mask);
+    new_sigcont_action.sa_flags = SA_SIGINFO;
+
     sigaction(SIGINT, &new_sigint_action, NULL);
     sigaction(SIGTSTP, &new_sigtstp_action, NULL);
     sigaction(SIGQUIT, &new_sigquit_action, NULL);
+    sigaction(SIGCONT, &new_sigcont_action, NULL);
     while (1);
 }
