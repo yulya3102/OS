@@ -8,11 +8,20 @@ int sigint_exit_code = 1; // ???
 int sigquit_exit_code = 0;
 
 void print_info_about_signal(const char * signame, siginfo_t * siginfo) {
-    printf("\n \
-            Signal name: %s\n \
-            Sending process ID: %i\n \
-            Real user ID of sending process: %i\n",
-            signame, siginfo->si_pid, siginfo->si_uid);
+    int si_code = siginfo->si_code; // value indicating why this signal was sent
+    printf("\n Signal name: %s\n", signame);
+    switch (si_code) {
+    case SI_USER:
+        printf(" Signal was sent by kill()\n Sending process ID: %i\n Real user ID of sending process: %i\n",
+                siginfo->si_pid, siginfo->si_uid);
+        break;
+    case SI_KERNEL:
+        printf(" Signal was sent by the kernel\n");
+        break;
+    default:
+        printf(" Signal was sent by someone\n");
+        break;
+    }
 }
 
 void sigint_sigaction(int signum, siginfo_t * siginfo, void * ucontext) {
