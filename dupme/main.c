@@ -1,8 +1,19 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
-void _write(int fd, char * buf, int size)
+#define UNUSED(x) (void)(x);
+
+int check(const char * comment, int what) {
+    if (what < 0) {
+        perror(comment);
+        _exit(1);
+    }
+    return what;
+}
+
+void write_(int fd, char * buf, int size)
 {
     int done = 0;
     while (done < size)
@@ -20,37 +31,8 @@ void _write(int fd, char * buf, int size)
     }
 }
 
-int EOF = 0;
-
-// read data and set EOF
-int _read(char * buffer, int max_size)
-{
-    if (max_size == 0) {
-        return 0;
-    }
-    int done = read(0, buffer, max_size);
-    if (done == -1) {
-        perror("read failed");
-        _exit(1);
-    }
-    if (done == 0) {
-        EOF = 1;
-    }
-    return done;
-}
-
-int _atoi(char * pNumber)
-{
-    char c = *pNumber;
-    int number = 0;
-    while (c != 0)
-    {
-        number = number * 10 + c - '0';
-        pNumber++;
-        c = *pNumber;
-    }
-    return number;
-}
+int eof_flag = 0; // Глобальная переменная подобного рода превращает код в
+             // нереентрабельную бяку.
 
 int find_newline(char * buf, int size)
 {
@@ -73,8 +55,8 @@ int find_newline(char * buf, int size)
 int print_next_string(char * buffer, int current_size) {
     int pos = find_newline(buffer, current_size);
     int string_size = pos + 1;
-    _write(1, buffer, string_size);
-    _write(1, buffer, string_size);
+    write_(1, buffer, string_size);
+    write_(1, buffer, string_size);
     current_size = current_size - string_size;
     memmove(buffer, buffer + string_size, current_size);
     return current_size;
@@ -89,17 +71,20 @@ int ignore_string(char * buffer, int max_size) {
         if (current_size == max_size) { // buffer is full, but still doesn't contain newline
             current_size = 0;
         }
-        int r = _read(buffer + current_size, max_size - current_size);
+        int r = check("read failed", read(0, buffer + current_size, max_size - current_size));
+        if (r == 0)
+            eof_flag = 1;
         current_size = current_size + r;
         pos = find_newline(buffer, current_size);
-        if (EOF) {
+        if (eof_flag) { // Этот кусок от сюда -> (1)
             if (pos == -1) { // ignore this string
                 return 0;
             }
             else {
                 break;
             }
-        }
+        } // (1) -> до сюда в этом цикле выдлядит адоватенько.
+          // else break самом конце цикла как бы намекает.
     }
     int ignored_string_size = pos + 1;
     memmove(buffer, buffer + ignored_string_size, current_size - ignored_string_size);
@@ -109,7 +94,10 @@ int ignore_string(char * buffer, int max_size) {
 
 int main(int argc, char * argv[])
 {
-    int k = _atoi(argv[1]);
+    UNUSED(argc); // Однако же
+
+    int k = atoi(argv[1]); // тут
+                           // стоит проверить, что $1 вообще существует.
     int size = k + 1;
     char * buffer = malloc(size);
 
@@ -120,7 +108,7 @@ int main(int argc, char * argv[])
 
     int current_size = 0;
     int pos = -1;
-    while (!EOF) { // buffer is empty and we still can read new data
+    while (!eof_flag) { // buffer is empty and we still can read new data
         // read new data until buffer contains newline
         while (pos == -1) {
             // buffer is full, but doesn't contain newline
@@ -129,13 +117,15 @@ int main(int argc, char * argv[])
                 current_size = ignore_string(buffer, current_size);
             }
             // read new data
-            int r = _read(buffer + current_size, size - current_size);
+            int r = check("read failed", read(0, buffer + current_size, size - current_size));
+            if (r == 0)
+                eof_flag = 1;
             current_size = current_size + r;
             pos = find_newline(buffer, current_size);
             // we can't read new data so we need to break
-            if (EOF) {
+            if (eof_flag) {
                 if (current_size == 0) {
-                    break;
+                    break; // не айс
                 }
                 // if last symbol is not newline then add it to the end
                 if (buffer[current_size] != '\n') {
@@ -160,7 +150,7 @@ int main(int argc, char * argv[])
                     }
                 }
                 pos = find_newline(buffer, current_size);
-                break;
+                break; // не айс
             }
         }
         // write all data we can process
@@ -170,4 +160,6 @@ int main(int argc, char * argv[])
         }
     }
     free(buffer);
+
+    return 0;
 }
