@@ -89,10 +89,13 @@ int ignore_string(char * buffer, int max_size) {
 
 int main(int argc, char * argv[])
 {
-    UNUSED(argc); // Однако же
+    if (argc != 2) {
+        char * usage = "Usage: dupme <max string length>\n";
+        write_(1, usage, strlen(usage));
+        _exit(1);
+    }
 
-    int k = atoi(argv[1]); // тут
-                           // стоит проверить, что $1 вообще существует.
+    int k = atoi(argv[1]);
     int size = k + 1;
     char * buffer = malloc(size);
 
