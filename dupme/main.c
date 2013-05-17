@@ -67,25 +67,20 @@ int ignore_string(char * buffer, int max_size) {
     // delete all data until '\n'
     int current_size = 0;
     int pos = -1;
-    while (pos == -1) {
+    do {
         if (current_size == max_size) { // buffer is full, but still doesn't contain newline
             current_size = 0;
         }
         int r = check("read failed", read(0, buffer + current_size, max_size - current_size));
-        if (r == 0)
-            eof_flag = 1;
         current_size = current_size + r;
         pos = find_newline(buffer, current_size);
-        if (eof_flag) { // Этот кусок от сюда -> (1)
+        if (r == 0) {
+            eof_flag = 1;
             if (pos == -1) { // ignore this string
-                return 0;
+                return 0;    // dirty hack :(
             }
-            else {
-                break;
-            }
-        } // (1) -> до сюда в этом цикле выдлядит адоватенько.
-          // else break самом конце цикла как бы намекает.
-    }
+        }
+    } while (pos == -1 && !eof_flag);
     int ignored_string_size = pos + 1;
     memmove(buffer, buffer + ignored_string_size, current_size - ignored_string_size);
     current_size = current_size - ignored_string_size;
