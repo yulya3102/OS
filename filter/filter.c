@@ -16,7 +16,7 @@ int find_separator(char separator, char * buf, int size)
     return pos;
 }
 
-void _write(int fd, char * buf, int size)
+void write_(int fd, char * buf, int size)
 {
     int done = 0;
     while (done < size)
@@ -48,8 +48,8 @@ void run(char ** argv, int argv_size, char * buffer, int size) {
         do {
             tpid = wait(&child_status);
             if (WIFEXITED(child_status) && !WEXITSTATUS(child_status)) {
-                _write(1, buffer, size);
-                _write(1, "\n", 1);
+                write_(1, buffer, size);
+                write_(1, "\n", 1);
             }
         } while (tpid != pid);
         free(current_arg);
@@ -60,7 +60,6 @@ void run(char ** argv, int argv_size, char * buffer, int size) {
     }
 }
 
-int EOF = 0;
 
 int get_new_data(char * buffer, int max_size) {
     if (max_size == 0) {
@@ -68,7 +67,8 @@ int get_new_data(char * buffer, int max_size) {
     }
     int r = read(0, buffer, max_size);
     if (r == 0) {
-        EOF = 1;
+        // eof
+        return -1;
     }
     return r;
 }
@@ -77,6 +77,7 @@ void main(int argc, char ** argv) {
     int buffer_size = 4 * 1024;
     char separator = '\n';
     int opt;
+    int eof_flag = 0;
     while ((opt = getopt(argc, argv, "nzb:")) != -1) {
         switch (opt) {
             case 'n':
@@ -104,8 +105,11 @@ void main(int argc, char ** argv) {
 
         char * buffer = malloc(buffer_size);
         int r = get_new_data(buffer, buffer_size);
+        if (r == -1) {
+            eof_flag = 1;
+        }
         int current_size = r;                   
-        if (EOF) {   // input is empty
+        if (eof_flag) {   // input is empty
             return;
         }
 
@@ -123,13 +127,16 @@ void main(int argc, char ** argv) {
             
             // read new data
             memmove(buffer, buffer + from, current_size - from);
-            if (!EOF) {
+            if (!eof_flag) {
                 // we don't have separators in buffer, so we have to read new data until we find separator
                 // in buffer now (current_size - from) bytes, so we can read (buffer_size - (current_size - from)) bytes
                 current_size = current_size - from;
                 while (pos == -1) {
                     r = get_new_data(buffer + current_size, buffer_size - current_size);
-                    if (EOF) {
+                    if (r == -1) {
+                        eof_flag = 1;
+                    }
+                    if (eof_flag) {
                         // r == 0 so we don't need to increase current_size
                         if (current_size > 0 && buffer[current_size - 1] != separator) {
                             // in buffer - string without separators
