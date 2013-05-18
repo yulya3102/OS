@@ -1,8 +1,10 @@
-// #include <sys/stat.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 
-void _write(int fd, char * buf, int size)
+void write_(int fd, char * buf, int size)
 {
     int done = 0;
     while (done < size)
@@ -37,8 +39,7 @@ void show_unified_diff(const char * first, const char * second) {
 void run(char * command, char ** argv, const char * output_file) {
     int pid = fork();
     if (pid == 0) {
-        // int fd = creat(output_file, S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR);
-        int fd = creat(output_file, 0x1a4);
+        int fd = creat(output_file, 0655);
         dup2(fd, 1);
         if (execvp(command, argv) == -1) {
             perror("exec failed");
@@ -59,23 +60,23 @@ void print_file(const char * path) {
     waitpid(pid, &status, 0);
 }
 
-void main(int argc, char ** argv) {
-    if (argc < 2) {
-        _write(1, "Usage:\nwatchthis $interval $command", 34);
+int main(int argc, char ** argv) {
+    if (argc != 3) {
+        write_(1, "Usage:\nwatchthis $interval $command\n", 36);
         _exit(0);
     }
     int interval = atoi(argv[1]);
     char * command = argv[2];
     char ** command_args = argv + 2;
     run(command, command_args, old);
-    _write(1, "Start output:\n", 14);
+    write_(1, "Start output:\n", 14);
     print_file(old);
     while (1) {
         sleep(interval);
         run(command, command_args, new);
-        _write(1, "New output:\n", 12);
+        write_(1, "New output:\n", 12);
         print_file(new);
-        _write(1, "Unified diff:\n", 14);
+        write_(1, "Unified diff:\n", 14);
         show_unified_diff(old, new);
         if (rename(new, old) == -1) {
             perror("rename failed");
