@@ -1,4 +1,6 @@
 #include <string.h>
+#include <stdio.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -73,7 +75,7 @@ int get_new_data(char * buffer, int max_size) {
     return r;
 }
 
-void main(int argc, char ** argv) {
+int main(int argc, char ** argv) {
     int buffer_size = 4 * 1024;
     char separator = '\n';
     int opt;
@@ -110,7 +112,7 @@ void main(int argc, char ** argv) {
         }
         int current_size = r;                   
         if (eof_flag) {   // input is empty
-            return;
+            return 0;
         }
 
         int pos = find_separator(separator, buffer, r);
@@ -166,4 +168,5 @@ void main(int argc, char ** argv) {
         free(buffer);
         free(command);
     }
+    return 0;
 }
