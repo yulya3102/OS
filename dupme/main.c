@@ -31,9 +31,6 @@ void write_(int fd, char * buf, int size)
     }
 }
 
-int eof_flag = 0; // Глобальная переменная подобного рода превращает код в
-             // нереентрабельную бяку.
-
 int find_newline(char * buf, int size)
 {
     if (size == 0) {
@@ -63,6 +60,7 @@ int print_next_string(char * buffer, int current_size) {
 }
 
 // read all string and delete it, then read new data
+// return -1 if current string is ignored and input is empty
 int ignore_string(char * buffer, int max_size) {
     // delete all data until '\n'
     int current_size = 0;
@@ -75,12 +73,11 @@ int ignore_string(char * buffer, int max_size) {
         current_size = current_size + r;
         pos = find_newline(buffer, current_size);
         if (r == 0) {
-            eof_flag = 1;
             if (pos == -1) { // ignore this string
-                return 0;    // dirty hack :(
+                return -1;
             }
         }
-    } while (pos == -1 && !eof_flag);
+    } while (pos == -1);
     int ignored_string_size = pos + 1;
     memmove(buffer, buffer + ignored_string_size, current_size - ignored_string_size);
     current_size = current_size - ignored_string_size;
@@ -106,6 +103,7 @@ int main(int argc, char * argv[])
 
     int current_size = 0;
     int pos = -1;
+    int eof_flag = 0;
     while (!eof_flag) { // buffer is empty and we still can read new data
         // read new data until buffer contains newline
         while (pos == -1) {
@@ -113,6 +111,10 @@ int main(int argc, char * argv[])
             // so ignore this string
             if (current_size == size) { 
                 current_size = ignore_string(buffer, current_size);
+                if (current_size == -1) {
+                    current_size = 0;
+                    break; // dirty hack
+                }
             }
             // read new data
             int r = check("read failed", read(0, buffer + current_size, size - current_size));
