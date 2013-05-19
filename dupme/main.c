@@ -118,36 +118,19 @@ int main(int argc, char * argv[])
             }
             // read new data
             int r = check("read failed", read(0, buffer + current_size, size - current_size));
-            if (r == 0)
-                eof_flag = 1;
             current_size = current_size + r;
             pos = find_newline(buffer, current_size);
             // we can't read new data so we need to break
-            if (eof_flag) {
+            if (r == 0) { // eof
+                eof_flag = 1;
                 if (current_size == 0) {
                     break; // не айс
                 }
                 // if last symbol is not newline then add it to the end
-                if (buffer[current_size] != '\n') {
-                    // buffer can be full
-                    // in this case print next string and add newline
-                    // or ignore last string if it doesn't contain newline
-                    if (current_size == size) {
-                        if (pos != -1) {
-                            current_size = print_next_string(buffer, current_size);
-                            if (current_size > 0) { // buffer is not empty
-                                buffer[current_size] = '\n';
-                                current_size = current_size + 1;
-                            }
-                        }
-                        else {
-                            current_size = ignore_string(buffer, current_size);
-                        }
-                    }
-                    else {
-                        buffer[current_size] = '\n';
-                        current_size = current_size + 1;
-                    }
+                if (buffer[current_size - 1] != '\n') {
+                    // buffer can't be full, see line 112
+                    buffer[current_size] = '\n';
+                    current_size++;
                 }
                 pos = find_newline(buffer, current_size);
                 break; // не айс
