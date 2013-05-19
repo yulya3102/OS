@@ -113,7 +113,7 @@ int main(int argc, char * argv[])
                 current_size = ignore_string(buffer, current_size);
                 if (current_size == -1) {
                     current_size = 0;
-                    break; // dirty hack
+                    eof_flag = 1;
                 }
             }
             // read new data
