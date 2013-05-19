@@ -118,7 +118,7 @@ int main(int argc, char ** argv) {
                 // we don't have separators in buffer, so we have to read new data until we find separator
                 // in buffer now (current_size - from) bytes, so we can read (buffer_size - (current_size - from)) bytes
                 current_size = current_size - from;
-                while (pos == -1) {
+                while (pos == -1 && !eof_flag) {
                     r = get_new_data(buffer + current_size, buffer_size - current_size);
                     if (r == -1) {
                         eof_flag = 1;
@@ -131,12 +131,12 @@ int main(int argc, char ** argv) {
                             current_size = current_size + 1;
                             pos = find_separator(separator, buffer, current_size);
                         }
-                        break;
-                    }
-                    current_size = current_size + r;
-                    pos = find_separator(separator, buffer, current_size);
-                    if (pos == -1 && current_size == buffer_size) {
-                        _exit(1);
+                    } else {
+                        current_size = current_size + r;
+                        pos = find_separator(separator, buffer, current_size);
+                        if (pos == -1 && current_size == buffer_size) {
+                            _exit(1);
+                        }
                     }
                 }
             }
