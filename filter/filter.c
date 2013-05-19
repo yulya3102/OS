@@ -106,12 +106,11 @@ int main(int argc, char ** argv) {
         command[command_size - 1] = NULL;
 
         char * buffer = malloc(buffer_size);
+
         int r = get_new_data(buffer, buffer_size);
+        int current_size = r;
         if (r == -1) {
             eof_flag = 1;
-        }
-        int current_size = r;                   
-        if (eof_flag) {   // input is empty
             return 0;
         }
 
@@ -137,9 +136,6 @@ int main(int argc, char ** argv) {
                     r = get_new_data(buffer + current_size, buffer_size - current_size);
                     if (r == -1) {
                         eof_flag = 1;
-                    }
-                    if (eof_flag) {
-                        // r == 0 so we don't need to increase current_size
                         if (current_size > 0 && buffer[current_size - 1] != separator) {
                             // in buffer - string without separators
                             if (current_size == buffer_size) {
