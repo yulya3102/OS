@@ -107,25 +107,11 @@ int main(int argc, char ** argv) {
 
         char * buffer = malloc(buffer_size);
 
-        int r = get_new_data(buffer, buffer_size);
+        int r = 0;
         int current_size = r;
-        if (r == -1) {
-            eof_flag = 1;
-            return 0;
-        }
-
         int pos = find_separator(separator, buffer, r);
-
-        while (pos != -1) { // we still can print data from buffer
-
-            // remove from buffer every string we can process
-            int from = 0;
-            while (pos != -1) {
-                run(command, command_size, buffer + from, pos);
-                from = from + pos + 1;
-                pos = find_separator(separator, buffer + from, current_size - from);
-            }
-            
+        int from = 0;
+        do {
             // read new data
             memmove(buffer, buffer + from, current_size - from);
             if (!eof_flag) {
@@ -154,12 +140,15 @@ int main(int argc, char ** argv) {
                     }
                 }
             }
-            else {
-                // we don't have data in buffer and we can't read new data
-                break;
-            }
-        }
 
+            // remove from buffer every string we can process
+            from = 0;
+            while (pos != -1) {
+                run(command, command_size, buffer + from, pos);
+                from = from + pos + 1;
+                pos = find_separator(separator, buffer + from, current_size - from);
+            }
+        } while (pos != -1 && !eof_flag);
         
         free(buffer);
         free(command);
