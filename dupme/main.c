@@ -106,7 +106,7 @@ int main(int argc, char * argv[])
     int eof_flag = 0;
     while (!eof_flag) { // buffer is empty and we still can read new data
         // read new data until buffer contains newline
-        while (pos == -1) {
+        while (pos == -1 && !eof_flag) {
             // buffer is full, but doesn't contain newline
             // so ignore this string
             if (current_size == size) { 
@@ -123,17 +123,13 @@ int main(int argc, char * argv[])
             // we can't read new data so we need to break
             if (r == 0) { // eof
                 eof_flag = 1;
-                if (current_size == 0) {
-                    break; // не айс
-                }
                 // if last symbol is not newline then add it to the end
-                if (buffer[current_size - 1] != '\n') {
+                if (current_size != 0 && buffer[current_size - 1] != '\n') {
                     // buffer can't be full, see line 112
                     buffer[current_size] = '\n';
                     current_size++;
+                    pos = find_newline(buffer, current_size);
                 }
-                pos = find_newline(buffer, current_size);
-                break; // не айс
             }
         }
         // write all data we can process
