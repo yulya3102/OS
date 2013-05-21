@@ -36,8 +36,18 @@ void write_(int fd, char * buf, int size)
     }
 }
 
+void * malloc_(size_t size) {
+    void * result = malloc(size);
+    if (result == NULL) {
+        char * message = "malloc failed\n";
+        write_(1, message, strlen(message));
+        _exit(1);
+    }
+    return result;
+}
+
 void run(char ** argv, int argv_size, char * buffer, int size) {
-    char * current_arg = malloc(size + 1);
+    char * current_arg = malloc_(size + 1);
     current_arg = memcpy(current_arg, buffer, size);
     current_arg[size] = 0;
     int pid = fork();
@@ -97,7 +107,7 @@ int main(int argc, char ** argv) {
     //command = argv + optind, arg, NULL
     int command_size = argc - optind + 2;
     if (command_size > 1) {
-        command = malloc((command_size) * sizeof(char *));
+        command = malloc_((command_size) * sizeof(char *));
         int i;
         for (i = optind; i < argc; i++) {
             command[i - optind] = argv[i];
@@ -105,7 +115,7 @@ int main(int argc, char ** argv) {
         //command[command_size - 2] is empty
         command[command_size - 1] = NULL;
 
-        char * buffer = malloc(buffer_size);
+        char * buffer = malloc_(buffer_size);
 
         int r = 0;
         int current_size = r;

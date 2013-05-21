@@ -95,6 +95,11 @@ int main(int argc, char * argv[])
     int k = atoi(argv[1]);
     int size = k + 1;
     char * buffer = malloc(size);
+    if (buffer = NULL) {
+        char * message = "malloc failed\n";
+        write_(1, message, strlen(message));
+        _exit(1);
+    }
 
     // read new data, find newline
     // while buffer doesn't contain newline, read new data until it's full
