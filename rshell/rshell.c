@@ -4,6 +4,8 @@
 #include <string.h>
 #include <netdb.h>
 #include <stdio.h>
+#include <sys/wait.h>
+#include <stdlib.h>
 
 #define LISTEN_BACKLOG 50
 
@@ -30,7 +32,7 @@ void dup2_(int fd1, int fd2) {
     check("dup2", dup2(fd1, fd2));
 }
 
-int main(int argc, char ** argv) {
+int main() {
     int pid = check("fork", fork());
     if (pid) {
         int status;
@@ -53,8 +55,6 @@ int main(int argc, char ** argv) {
     check("setsockopt", setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, (char *) &option, sizeof(option)));
     check("bind", bind(socketfd, result->ai_addr, result->ai_addrlen));
     check("listen", listen(socketfd, LISTEN_BACKLOG));
-    struct sockaddr peer_addr;
-    socklen_t peer_addr_size;
     printf("waiting for connection\n");
     int acceptedfd = check("accept", accept(socketfd, NULL, NULL));
     if (check("fork", fork())) {
