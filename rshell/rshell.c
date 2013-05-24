@@ -55,59 +55,61 @@ int main() {
     check("setsockopt", setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, (char *) &option, sizeof(option)));
     check("bind", bind(socketfd, result->ai_addr, result->ai_addrlen));
     check("listen", listen(socketfd, LISTEN_BACKLOG));
-    printf("waiting for connection\n");
-    int acceptedfd = check("accept", accept(socketfd, NULL, NULL));
-    if (check("fork", fork())) {
-        close_(acceptedfd);
-        close_(socketfd);
-    } else {
-        close_(socketfd);
-        char * hello = "hello, world\n";
-        write_(acceptedfd, hello, strlen(hello));
-        int master, slave;
-        char buf[4096];
-        check("openpty", openpty(&master, &slave, buf, NULL, NULL));
-        if (check("fork", fork())) {
-            close_(slave);
-            int buffer_size = 4096;
-            char * buffer = malloc(buffer_size);
-            if (buffer == NULL) {
-                char * message = "malloc() failed";
-                write_(1, message, strlen(message));
-                _exit(1);
-            }
-            check("fcntl", fcntl(master, F_SETFL, O_NONBLOCK));
-            check("fcntl", fcntl(acceptedfd, F_SETFL, O_NONBLOCK));
-            while (1) {
-                int r = read(master, buffer, buffer_size);
-                if (r > 0) {
-                    write_(acceptedfd, buffer, r);
-                } else if (r == 0) {
-                    break;
-                }
-
-                r = read(acceptedfd, buffer, buffer_size);
-                if (r > 0) {
-                    write_(master, buffer, r);
-                } else if (r == 0) {
-                    break;
-                }
-            }
-            free(buffer);
-            close_(master);
+    while (1) {
+        printf("waiting for connection\n");
+        int acceptedfd = check("accept", accept(socketfd, NULL, NULL));
+        int acceptedpid = check("fork", fork());
+        if (acceptedpid) {
             close_(acceptedfd);
         } else {
-            close_(master);
-            close_(acceptedfd);
-            check("setsid", setsid());
-            int fd = check("open", open(buf, O_RDWR));
-            close_(fd);
+            close_(socketfd);
+            char * hello = "hello, world\n";
+            write_(acceptedfd, hello, strlen(hello));
+            int master, slave;
+            char buf[4096];
+            check("openpty", openpty(&master, &slave, buf, NULL, NULL));
+            if (check("fork", fork())) {
+                close_(slave);
+                int buffer_size = 4096;
+                char * buffer = malloc(buffer_size);
+                if (buffer == NULL) {
+                    char * message = "malloc() failed";
+                    write_(1, message, strlen(message));
+                    _exit(1);
+                }
+                check("fcntl", fcntl(master, F_SETFL, O_NONBLOCK));
+                check("fcntl", fcntl(acceptedfd, F_SETFL, O_NONBLOCK));
+                while (1) {
+                    int r = read(master, buffer, buffer_size);
+                    if (r > 0) {
+                        write_(acceptedfd, buffer, r);
+                    } else if (r == 0) {
+                        break;
+                    }
 
-            dup2_(slave, 0);
-            dup2_(slave, 1);
-            dup2_(slave, 2);
-            close_(slave);
-            execl("/bin/sh", "/bin/sh", NULL);
+                    r = read(acceptedfd, buffer, buffer_size);
+                    if (r > 0) {
+                        write_(master, buffer, r);
+                    } else if (r == 0) {
+                        break;
+                    }
+                }
+                free(buffer);
+                close_(master);
+                close_(acceptedfd);
+            } else {
+                close_(master);
+                close_(acceptedfd);
+                check("setsid", setsid());
+                int fd = check("open", open(buf, O_RDWR));
+                close_(fd);
+
+                dup2_(slave, 0);
+                dup2_(slave, 1);
+                dup2_(slave, 2);
+                close_(slave);
+                execl("/bin/sh", "/bin/sh", NULL);
+            }
         }
     }
     return 0;
