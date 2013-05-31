@@ -33,6 +33,16 @@ void dup2_(int fd1, int fd2) {
     check("dup2", dup2(fd1, fd2));
 }
 
+void * malloc_(int size) {
+    void * buffer = malloc(size);
+    if (buffer == NULL) {
+        char * message = "malloc() failed";
+        write_(1, message, strlen(message));
+        _exit(1);
+    }
+    return buffer;
+}
+
 int daemon_pid;
 
 void sigint_handler(int signum) {
@@ -102,31 +112,17 @@ int main() {
             check("openpty", openpty(&master, &slave, buf, NULL, NULL));
             if (check("fork", fork())) {
                 close_(slave);
+
                 int master_buffer_size = 4096;
-                char * master_buffer = malloc(master_buffer_size);
-                if (master_buffer == NULL) {
-                    char * message = "malloc() failed";
-                    write_(1, message, strlen(message));
-                    _exit(1);
-                }
+                char * master_buffer = malloc_(master_buffer_size);
                 int master_buffer_full = 0;
                 int accepted_buffer_size = 4096;
-                char * accepted_buffer = malloc(accepted_buffer_size);
-                if (accepted_buffer == NULL) {
-                    char * message = "malloc() failed";
-                    write_(1, message, strlen(message));
-                    _exit(1);
-                }
+                char * accepted_buffer = malloc_(accepted_buffer_size);
                 int accepted_buffer_full = 0;
 
                 short error_events = POLLERR | POLLHUP | POLLNVAL;
                 int pollfds_size = 2;
-                struct pollfd * pollfds = malloc(sizeof(struct pollfd *) * pollfds_size);
-                if (pollfds == NULL) {
-                    char * message = "malloc() failed";
-                    write_(1, message, strlen(message));
-                    _exit(1);
-                }
+                struct pollfd * pollfds = malloc_(sizeof(struct pollfd *) * pollfds_size);
                 struct pollfd masterpollfd;
                 masterpollfd.fd = master;
                 masterpollfd.events = POLLIN | error_events;
