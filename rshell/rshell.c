@@ -32,11 +32,19 @@ void dup2_(int fd1, int fd2) {
     check("dup2", dup2(fd1, fd2));
 }
 
+int daemon_pid;
+
+void sigint_handler(int signum) {
+    kill(daemon_pid, SIGINT);
+    _exit(1);
+}
+
 int main() {
-    int pid = check("fork", fork());
-    if (pid) {
+    daemon_pid = check("fork", fork());
+    signal(SIGINT, &sigint_handler);
+    if (daemon_pid) {
         int status;
-        waitpid(pid, &status, 0);
+        waitpid(daemon_pid, &status, 0);
         return 0;
     }
     check("setsid", setsid());
