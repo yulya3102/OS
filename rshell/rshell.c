@@ -73,6 +73,24 @@ void update_events(int eof, int current_size, int max_size, struct pollfd * in, 
     }
 }
 
+typedef struct {
+    int max_size;
+    int current_size;
+    char * buffer;
+    int eof;
+    int fd;
+} buffer_t;
+
+buffer_t new_buffer(int max_size, int fd) {
+    buffer_t buffer;
+    buffer.max_size = max_size;
+    buffer.current_size = 0;
+    buffer.buffer = malloc_(max_size);
+    buffer.eof = 0;
+    buffer.fd = fd;
+    return buffer;
+}
+
 int main() {
     daemon_pid = check("fork", fork());
     signal(SIGINT, &sigint_handler);
@@ -113,64 +131,49 @@ int main() {
             if (check("fork", fork())) {
                 close_(slave);
 
-                int master_buffer_size = 4096;
-                char * master_buffer = malloc_(master_buffer_size);
-                int master_buffer_full = 0;
-                int accepted_buffer_size = 4096;
-                char * accepted_buffer = malloc_(accepted_buffer_size);
-                int accepted_buffer_full = 0;
+                int size = 2;
+
+                buffer_t * buffers = malloc_(sizeof(buffer_t) * size);
+                buffers[0] = new_buffer(4096, master);
+                buffers[1] = new_buffer(4096, accepted);
 
                 short error_events = POLLERR | POLLHUP | POLLNVAL;
-                int pollfds_size = 2;
-                struct pollfd * pollfds = malloc_(sizeof(struct pollfd *) * pollfds_size);
-                struct pollfd masterpollfd;
-                masterpollfd.fd = master;
-                masterpollfd.events = POLLIN | error_events;
-                masterpollfd.revents = 0;
-                struct pollfd acceptedpollfd;
-                acceptedpollfd.fd = accepted;
-                acceptedpollfd.events = POLLIN | error_events;
-                acceptedpollfd.revents = 0;
-                pollfds[0] = masterpollfd;
-                pollfds[1] = acceptedpollfd;
-                int master_eof = 0;
-                int accepted_eof = 0;
-                while (!master_eof || !accepted_eof || master_buffer_full > 0 || accepted_buffer_full > 0) {
-                    int k = check("poll", poll(pollfds, pollfds_size, -1));
-                    if (pollfds[0].revents & POLLIN) {
-                        read_(master, master_buffer, master_buffer_size, &master_buffer_full, &master_eof);
-                    }
-                    if (pollfds[1].revents & POLLOUT) {
-                        int r = check("write", write(accepted, master_buffer, master_buffer_full));
-                        memmove(master_buffer, master_buffer + r, master_buffer_full - r);
-                        master_buffer_full -= r;
-                    }
-                    if (pollfds[1].revents & POLLIN) {
-                        read_(accepted, accepted_buffer, accepted_buffer_size, &accepted_buffer_full, &accepted_eof);
-                    }
-                    if (pollfds[0].revents & POLLOUT) {
-                        int r = check("write", write(master, accepted_buffer, accepted_buffer_full));
-                        memmove(accepted_buffer, accepted_buffer + r, accepted_buffer_full - r);
-                        accepted_buffer_full -= r;
-                    }
-                    if (pollfds[0].revents & error_events) {
-                        master_eof = 1;
-                        accepted_buffer_full = 0;
-                        accepted_eof = 1;
-                    }
-                    if (pollfds[1].revents & error_events) {
-                        accepted_eof = 1;
-                        master_buffer_full = 0;
-                        master_eof = 1;
+                struct pollfd * pollfds = malloc_(sizeof(struct pollfd *) * size);
+                int i;
+                for (i = 0; i < size; i++) {
+                    struct pollfd pfd;
+                    pfd.fd = buffers[i].fd;
+                    pfd.events = POLLIN | error_events;
+                    pfd.revents = 0;
+                    pollfds[i] = pfd;
+                }
+                while (!buffers[0].eof || !buffers[1].eof || buffers[0].current_size > 0 || buffers[0].current_size > 0) {
+                    int k = check("poll", poll(pollfds, size, -1));
+                    for (i = 0; i < size; i++) {
+                        if (pollfds[i].revents & POLLIN) {
+                            read_(buffers[i].fd, buffers[i].buffer, buffers[i].max_size, &buffers[i].current_size, &buffers[i].eof);
+                        }
+                        if (pollfds[i].revents & POLLOUT) {
+                            int r = check("write", write(buffers[i].fd, buffers[1 - i].buffer, buffers[1 - i].current_size));
+                            memmove(buffers[1 - i].buffer, buffers[1 - i].buffer + r, buffers[1 - i].current_size - r);
+                            buffers[1 - i].current_size -= r;
+                        }
+                        if (pollfds[i].revents & error_events) {
+                            buffers[i].eof = 1;
+                            buffers[1 - i].current_size = 0;
+                            buffers[1 - i].eof = 1;
+                        }
                     }
 
-                    update_events(master_eof, master_buffer_full, master_buffer_size, &pollfds[0], &pollfds[1]);
-                    update_events(accepted_eof, accepted_buffer_full, accepted_buffer_size, &pollfds[1], &pollfds[0]);
+                    for (i = 0; i < size; i++) {
+                        update_events(buffers[i].eof, buffers[i].current_size, buffers[i].max_size, &pollfds[i], &pollfds[1 - i]);
+                    }
                 }
-                close_(master);
-                close_(accepted);
-                free(master_buffer);
-                free(accepted_buffer);
+                for (i = 0; i < size; i++) {
+                    close(buffers[i].fd);
+                    free(buffers[i].buffer);
+                }
+                free(buffers);
             } else { // сессия
                 close_(master);
                 close_(accepted);
