@@ -40,6 +40,29 @@ void sigint_handler(int signum) {
     _exit(1);
 }
 
+void read_(int fd, char * buffer, int max_size, int * current_size, int * eof) {
+    int r = check("read", read(fd, buffer + *current_size, max_size - *current_size));
+    if (r == 0) {
+        *eof = 1;
+    } else {
+        *current_size += r;
+    }
+}
+
+void update_events(int eof, int current_size, int max_size, struct pollfd * in, struct pollfd * out) {
+    if (eof || current_size == max_size) {
+        in->events &= ~POLLIN;
+    }
+    if (current_size == 0) {
+        out->events &= ~POLLOUT;
+    } else if (current_size < max_size) {
+        out->events |= POLLOUT;
+        if (!eof) {
+            in->events |= POLLIN;
+        }
+    }
+}
+
 int main() {
     daemon_pid = check("fork", fork());
     signal(SIGINT, &sigint_handler);
@@ -95,63 +118,61 @@ int main() {
                     _exit(1);
                 }
                 int accepted_buffer_full = 0;
+
+                short error_events = POLLERR | POLLHUP | POLLNVAL;
                 int pollfds_size = 2;
-                struct pollfd * pollfds = malloc(sizeof(struct pollfd *) * pollfds_size); // TODO: check
+                struct pollfd * pollfds = malloc(sizeof(struct pollfd *) * pollfds_size);
+                if (pollfds == NULL) {
+                    char * message = "malloc() failed";
+                    write_(1, message, strlen(message));
+                    _exit(1);
+                }
                 struct pollfd masterpollfd;
                 masterpollfd.fd = master;
-                masterpollfd.events = POLLIN;
+                masterpollfd.events = POLLIN | error_events;
                 masterpollfd.revents = 0;
                 struct pollfd acceptedpollfd;
                 acceptedpollfd.fd = accepted;
-                acceptedpollfd.events = POLLIN;
+                acceptedpollfd.events = POLLIN | error_events;
                 acceptedpollfd.revents = 0;
                 pollfds[0] = masterpollfd;
                 pollfds[1] = acceptedpollfd;
                 int master_eof = 0;
                 int accepted_eof = 0;
-                while (!master_eof || !accepted_eof) {
+                while (!master_eof || !accepted_eof || master_buffer_full > 0 || accepted_buffer_full > 0) {
                     int k = check("poll", poll(pollfds, pollfds_size, -1));
                     if (pollfds[0].revents & POLLIN) {
-                        int r = check("read", read(master, master_buffer + master_buffer_full, master_buffer_size - master_buffer_full));
-                        if (r == 0) {
-                            master_eof = 1;
-                            pollfds[0].events = 0;
-                            close_(master);
-                        } else {
-                            master_buffer_full += r;
-                            pollfds[1].events |= POLLOUT;
-                            if (master_buffer_full == master_buffer_size) {
-                                pollfds[0].events ^= POLLIN;
-                            }
-                        }
+                        read_(master, master_buffer, master_buffer_size, &master_buffer_full, &master_eof);
                     }
                     if (pollfds[1].revents & POLLOUT) {
-                        write_(accepted, master_buffer, master_buffer_full);
-                        master_buffer_full = 0;
-                        pollfds[1].events ^= POLLOUT;
-                        pollfds[0].events |= POLLIN;
+                        int r = check("write", write(accepted, master_buffer, master_buffer_full));
+                        memmove(master_buffer, master_buffer + r, master_buffer_full - r);
+                        master_buffer_full -= r;
                     }
                     if (pollfds[1].revents & POLLIN) {
-                        int r = check("read", read(accepted, accepted_buffer + accepted_buffer_full, accepted_buffer_size - accepted_buffer_full));
-                        if (r == 0) {
-                            accepted_eof = 1;
-                            pollfds[1].events = 0;
-                            close_(accepted);
-                        } else {
-                            accepted_buffer_full += r;
-                            pollfds[0].events |= POLLOUT;
-                            if (accepted_buffer_full == accepted_buffer_size) {
-                                pollfds[1].events ^= POLLIN;
-                            }
-                        }
+                        read_(accepted, accepted_buffer, accepted_buffer_size, &accepted_buffer_full, &accepted_eof);
                     }
                     if (pollfds[0].revents & POLLOUT) {
-                        write_(master, accepted_buffer, accepted_buffer_full);
-                        accepted_buffer_full = 0;
-                        pollfds[0].events ^= POLLOUT;
-                        pollfds[1].events |= POLLIN;
+                        int r = check("write", write(master, accepted_buffer, accepted_buffer_full));
+                        memmove(accepted_buffer, accepted_buffer + r, accepted_buffer_full - r);
+                        accepted_buffer_full -= r;
                     }
+                    if (pollfds[0].revents & error_events) {
+                        master_eof = 1;
+                        accepted_buffer_full = 0;
+                        accepted_eof = 1;
+                    }
+                    if (pollfds[1].revents & error_events) {
+                        accepted_eof = 1;
+                        master_buffer_full = 0;
+                        master_eof = 1;
+                    }
+
+                    update_events(master_eof, master_buffer_full, master_buffer_size, &pollfds[0], &pollfds[1]);
+                    update_events(accepted_eof, accepted_buffer_full, accepted_buffer_size, &pollfds[1], &pollfds[0]);
                 }
+                close_(master);
+                close_(accepted);
                 free(master_buffer);
                 free(accepted_buffer);
             } else { // сессия
