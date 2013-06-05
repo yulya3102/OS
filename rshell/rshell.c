@@ -86,6 +86,12 @@ buffer_t new_buffer(int size) {
     return buffer;
 }
 
+void preprocess_data(buffer_t * accepted, buffer_t * preprocessed) {
+    memmove(preprocessed->buffer, accepted->buffer, accepted->current_size);
+    preprocessed->current_size = accepted->current_size;
+    accepted->current_size = 0;
+}
+
 int main() {
     daemon_pid = check("fork", fork());
     signal(SIGINT, &sigint_handler);
@@ -127,6 +133,7 @@ int main() {
                 close_(slave);
 
                 buffer_t master_buffer = new_buffer(4096);
+                buffer_t preprocessed_buffer = new_buffer(4096);
                 buffer_t accepted_buffer = new_buffer(4096);
 
                 short error_events = POLLERR | POLLHUP | POLLNVAL;
@@ -144,7 +151,7 @@ int main() {
                 pollfds[1] = acceptedpollfd;
                 int master_eof = 0;
                 int accepted_eof = 0;
-                while (!master_eof || !accepted_eof || master_buffer.current_size > 0 || accepted_buffer.current_size > 0) {
+                while (!master_eof || !accepted_eof || master_buffer.current_size > 0 || preprocessed_buffer.current_size > 0 || accepted_buffer.current_size > 0) {
                     int k = check("poll", poll(pollfds, pollfds_size, -1));
                     if (pollfds[0].revents & POLLIN) {
                         read_(master, master_buffer.buffer, master_buffer.size, &master_buffer.current_size, &master_eof);
@@ -156,14 +163,16 @@ int main() {
                     }
                     if (pollfds[1].revents & POLLIN) {
                         read_(accepted, accepted_buffer.buffer, accepted_buffer.size, &accepted_buffer.current_size, &accepted_eof);
+                        preprocess_data(&accepted_buffer, &preprocessed_buffer);
                     }
                     if (pollfds[0].revents & POLLOUT) {
-                        int r = check("write", write(master, accepted_buffer.buffer, accepted_buffer.current_size));
-                        memmove(accepted_buffer.buffer, accepted_buffer.buffer + r, accepted_buffer.current_size - r);
-                        accepted_buffer.current_size -= r;
+                        int r = check("write", write(master, preprocessed_buffer.buffer, preprocessed_buffer.current_size));
+                        memmove(preprocessed_buffer.buffer, preprocessed_buffer.buffer + r, preprocessed_buffer.current_size - r);
+                        preprocessed_buffer.current_size -= r;
                     }
                     if (pollfds[0].revents & error_events) {
                         master_eof = 1;
+                        preprocessed_buffer.current_size = 0;
                         accepted_buffer.current_size = 0;
                         accepted_eof = 1;
                     }
@@ -174,11 +183,12 @@ int main() {
                     }
 
                     update_events(master_eof, master_buffer.current_size, master_buffer.size, &pollfds[0], &pollfds[1]);
-                    update_events(accepted_eof, accepted_buffer.current_size, accepted_buffer.size, &pollfds[1], &pollfds[0]);
+                    update_events(accepted_eof, preprocessed_buffer.current_size, preprocessed_buffer.size, &pollfds[1], &pollfds[0]);
                 }
                 close_(master);
                 close_(accepted);
                 free(master_buffer.buffer);
+                free(preprocessed_buffer.buffer);
                 free(accepted_buffer.buffer);
             } else { // сессия
                 close_(master);
