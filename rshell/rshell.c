@@ -111,7 +111,7 @@ void preprocess_data(buffer_t * accepted, buffer_t * preprocessed, int * accepte
             _exit(1);
         }
         accepted->current_size--;
-        memmove(accepted->buffer + 1, accepted->buffer, accepted->current_size);
+        memmove(accepted->buffer, accepted->buffer + 1, accepted->current_size);
     }
     if (*accepted_state == 1) { // resize event
     } else if (*accepted_state == 2) { // type event
