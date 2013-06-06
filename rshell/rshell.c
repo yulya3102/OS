@@ -86,10 +86,46 @@ buffer_t new_buffer(int size) {
     return buffer;
 }
 
-void preprocess_data(buffer_t * accepted, buffer_t * preprocessed) {
-    memmove(preprocessed->buffer, accepted->buffer, accepted->current_size);
-    preprocessed->current_size = accepted->current_size;
-    accepted->current_size = 0;
+int pos(char symbol, char * buffer, int size) {
+    int i;
+    for (i = 0; i < size; i++) {
+        if (buffer[i] == symbol) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void preprocess_data(buffer_t * accepted, buffer_t * preprocessed, int * accepted_state) {
+    if (*accepted_state == 0) { // new event
+        if (accepted->buffer[0] == 'r') {
+            *accepted_state = 1;
+        } else if (accepted->buffer[0] == 't') {
+            *accepted_state = 2;
+        } else {
+            char * message = "unknown event\n";
+            write(1, message, strlen(message));
+            _exit(1);
+        }
+        accepted->current_size--;
+        memmove(accepted->buffer + 1, accepted->buffer, accepted->current_size);
+    }
+    if (*accepted_state == 1) { // resize event
+    } else if (*accepted_state == 2) { // type event
+        int p = pos('\0', accepted->buffer, accepted->current_size);
+        if (p == -1) {
+            memmove(preprocessed->buffer, accepted->buffer, accepted->current_size);
+            preprocessed->current_size = accepted->current_size;
+            accepted->current_size = 0;
+        } else {
+            memmove(preprocessed->buffer, accepted->buffer, p);
+            preprocessed->current_size = p;
+            int deleted_string_length = p + 1;
+            memmove(accepted->buffer, accepted->buffer + deleted_string_length, accepted->current_size - deleted_string_length);
+            accepted->current_size -= deleted_string_length;
+            *accepted_state = 0;
+        }
+    }
 }
 
 int main() {
@@ -151,6 +187,7 @@ int main() {
                 pollfds[1] = acceptedpollfd;
                 int master_eof = 0;
                 int accepted_eof = 0;
+                int accepted_state = 0;
                 while (!master_eof || !accepted_eof || master_buffer.current_size > 0 || preprocessed_buffer.current_size > 0 || accepted_buffer.current_size > 0) {
                     int k = check("poll", poll(pollfds, pollfds_size, -1));
                     if (pollfds[0].revents & POLLIN) {
@@ -163,7 +200,7 @@ int main() {
                     }
                     if (pollfds[1].revents & POLLIN) {
                         read_(accepted, accepted_buffer.buffer, accepted_buffer.size, &accepted_buffer.current_size, &accepted_eof);
-                        preprocess_data(&accepted_buffer, &preprocessed_buffer);
+                        preprocess_data(&accepted_buffer, &preprocessed_buffer, &accepted_state);
                     }
                     if (pollfds[0].revents & POLLOUT) {
                         int r = check("write", write(master, preprocessed_buffer.buffer, preprocessed_buffer.current_size));
