@@ -1,3 +1,4 @@
+#include <sys/ioctl.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -8,10 +9,11 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <stdio.h>
+#include <termios.h>
 
 #define UNUSED(x) (void)(x)
 
-int window_size_changed = 0;
+int window_size_changed = 1;
 
 void sigwinch_handler(int signum) {
     UNUSED(signum);
@@ -26,7 +28,16 @@ int check(char * message, int value) {
     return value;
 }
 
+typedef struct winsize winsize_t;
+
+winsize_t get_window_size(int fd) {
+    winsize_t ws;
+    check("ioctl", ioctl(fd, TIOCGWINSZ, &ws));
+    return ws;
+}
+
 int main() {
+    int ttyfd = check("open", open("/dev/tty", O_RDONLY));
     signal(SIGWINCH, sigwinch_handler);
     struct addrinfo hints;
     memset(&hints, 0, sizeof(struct addrinfo));
@@ -99,6 +110,21 @@ int main() {
             socket_size -= r;
         }
 
+        if (window_size_changed) {
+            winsize_t ws = get_window_size(ttyfd);
+            if (buffer_size > input_size + 6) {
+                input_buffer[input_size] = 'r';
+                input_size++;
+                *(short *)(input_buffer + input_size) = ws.ws_row;
+                input_size += 2;
+                *(short *)(input_buffer + input_size) = ws.ws_col;
+                input_size += 2;
+                input_buffer[input_size] = '\0';
+                input_size++;
+                window_size_changed = 0;
+            }
+        }
+
         // update events
         if (input_eof || input_size == buffer_size) {
             pollfds[0].events &= ~POLLIN;
@@ -121,12 +147,6 @@ int main() {
             if (!socket_eof) {
                 pollfds[1].events |= POLLIN;
             }
-        }
-
-        if (window_size_changed) {
-            char * message = "new window size";
-            write(1, message, strlen(message));
-            window_size_changed = 0;
         }
     }
     return 0;
