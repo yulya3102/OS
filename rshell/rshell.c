@@ -10,6 +10,8 @@
 
 #define LISTEN_BACKLOG 50
 
+#define UNUSED(x) (void)(x)
+
 int check(const char * message, int result) {
     if (result == -1) {
         perror(message);
@@ -46,6 +48,7 @@ void * malloc_(int size) {
 int daemon_pid;
 
 void sigint_handler(int signum) {
+    UNUSED(signum);
     kill(daemon_pid, SIGINT);
     _exit(1);
 }
@@ -189,7 +192,7 @@ int main() {
                 int accepted_eof = 0;
                 int accepted_state = 0;
                 while (!master_eof || !accepted_eof || master_buffer.current_size > 0 || preprocessed_buffer.current_size > 0 || accepted_buffer.current_size > 0) {
-                    int k = check("poll", poll(pollfds, pollfds_size, -1));
+                    check("poll", poll(pollfds, pollfds_size, -1));
                     if (pollfds[0].revents & POLLIN) {
                         read_(master, master_buffer.buffer, master_buffer.size, &master_buffer.current_size, &master_eof);
                     }
