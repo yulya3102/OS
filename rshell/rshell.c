@@ -99,7 +99,14 @@ int pos(char symbol, char * buffer, int size) {
     return -1;
 }
 
-void preprocess_data(buffer_t * accepted, buffer_t * preprocessed, int * accepted_state) {
+void set_terminal_size(int ttyfd, short rows, short columns) {
+    struct winsize ws;
+    ws.ws_row = rows;
+    ws.ws_col = columns;
+    check("ioctl", ioctl(ttyfd, TIOCSWINSZ, &ws));
+}
+
+void preprocess_data(int ttyfd, buffer_t * accepted, buffer_t * preprocessed, int * accepted_state) {
     if (*accepted_state == 0) { // new event
         if (accepted->buffer[0] == 'r') {
             *accepted_state = 1;
@@ -114,6 +121,13 @@ void preprocess_data(buffer_t * accepted, buffer_t * preprocessed, int * accepte
         memmove(accepted->buffer, accepted->buffer + 1, accepted->current_size);
     }
     if (*accepted_state == 1) { // resize event
+        short rows = *((short *)(accepted->buffer));
+        short cols = *((short *)(accepted->buffer + 2));
+        set_terminal_size(ttyfd, rows, cols);
+        int deleted_string_length = 5;
+        memmove(accepted->buffer, accepted->buffer + deleted_string_length, accepted->current_size - deleted_string_length);
+        accepted->current_size -= deleted_string_length;
+        *accepted_state = 0;
     } else if (*accepted_state == 2) { // type event
         int p = pos('\0', accepted->buffer, accepted->current_size);
         if (p == -1) {
@@ -203,7 +217,7 @@ int main() {
                     }
                     if (pollfds[1].revents & POLLIN) {
                         read_(accepted, accepted_buffer.buffer, accepted_buffer.size, &accepted_buffer.current_size, &accepted_eof);
-                        preprocess_data(&accepted_buffer, &preprocessed_buffer, &accepted_state);
+                        preprocess_data(master, &accepted_buffer, &preprocessed_buffer, &accepted_state);
                     }
                     if (pollfds[0].revents & POLLOUT) {
                         int r = check("write", write(master, preprocessed_buffer.buffer, preprocessed_buffer.current_size));
