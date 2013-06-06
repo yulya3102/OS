@@ -125,6 +125,21 @@ int main() {
             }
         }
 
+        if (pollfds[0].revents & error_events) {
+            input_eof = 1;
+        }
+        if (pollfds[1].revents & error_events) {
+            socket_eof = 1;
+            input_size = 0;
+            input_eof = 1;
+        }
+        if (pollfds[2].revents & error_events) {
+            socket_size = 0;
+            socket_eof = 1;
+            input_size = 0;
+            input_eof = 1;
+        }
+
         // update events
         if (input_eof || input_size == buffer_size) {
             pollfds[0].events &= ~POLLIN;
