@@ -198,7 +198,7 @@ int main() {
 
                 short error_events = POLLERR | POLLHUP | POLLNVAL;
                 int pollfds_size = 2;
-                struct pollfd * pollfds = malloc_(sizeof(struct pollfd *) * pollfds_size);
+                struct pollfd pollfds[pollfds_size];
                 struct pollfd masterpollfd;
                 masterpollfd.fd = master;
                 masterpollfd.events = POLLIN | error_events;
