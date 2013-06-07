@@ -53,6 +53,12 @@ void sigint_handler(int signum) {
     _exit(1);
 }
 
+void sigchld_handler(int signum) {
+    UNUSED(signum);
+    int status;
+    wait(&status);
+}
+
 void read_(int fd, char * buffer, int max_size, int * current_size, int * eof) {
     int r = check("read", read(fd, buffer + *current_size, max_size - *current_size));
     if (r == 0) {
@@ -148,6 +154,7 @@ void preprocess_data(int ttyfd, buffer_t * accepted, buffer_t * preprocessed, in
 int main() {
     daemon_pid = check("fork", fork());
     signal(SIGINT, &sigint_handler);
+    signal(SIGCHLD, &sigchld_handler);
     if (daemon_pid) {
         int status;
         waitpid(daemon_pid, &status, 0);
