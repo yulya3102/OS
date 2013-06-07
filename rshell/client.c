@@ -55,9 +55,12 @@ int main() {
     hints.ai_flags = AI_PASSIVE;
     hints.ai_socktype = SOCK_STREAM;
     struct addrinfo * result;
-    getaddrinfo(0, "8822", &hints, &result);
-    int socketfd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-    connect(socketfd, result->ai_addr, result->ai_addrlen);
+    if (getaddrinfo(0, "8822", &hints, &result) != 0) {
+        printf("getaddrinfo() failed\n");
+        _exit(1);
+    }
+    int socketfd = check("socket", socket(result->ai_family, result->ai_socktype, result->ai_protocol));
+    check("connect", connect(socketfd, result->ai_addr, result->ai_addrlen));
 
     int buffer_size = 4096;
 
@@ -88,7 +91,7 @@ int main() {
     pollfds[2] = output_pollfd;
     
     while (!input_eof || !socket_eof || input_size > 0 || socket_size > 0) {
-        poll(pollfds, pollfds_size, -1);
+        check("poll", poll(pollfds, pollfds_size, -1));
         if (pollfds[0].revents & POLLIN) {
             input_buffer[input_size] = 't';
             input_size++;
