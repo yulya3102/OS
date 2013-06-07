@@ -36,6 +36,16 @@ winsize_t get_window_size(int fd) {
     return ws;
 }
 
+void * malloc_(size_t size) {
+    void * buffer = malloc(size);
+    if (buffer == NULL) {
+        char * message = "malloc() failed";
+        write(2, message, strlen(message));
+        _exit(1);
+    }
+    return buffer;
+}
+
 int main() {
     int ttyfd = check("open", open("/dev/tty", O_RDONLY));
     signal(SIGWINCH, sigwinch_handler);
@@ -54,13 +64,13 @@ int main() {
     short error_events = POLLERR | POLLHUP | POLLNVAL;
 
     int pollfds_size = 3;
-    struct pollfd * pollfds = malloc(sizeof(struct pollfd) * pollfds_size);
+    struct pollfd pollfds[3];
 
     struct pollfd input_pollfd;
     input_pollfd.fd = 0;
     input_pollfd.events = POLLIN | error_events;
     pollfds[0] = input_pollfd;
-    char * input_buffer = malloc(buffer_size);
+    char * input_buffer = malloc_(buffer_size);
     int input_size = 0;
     int input_eof = 0;
 
@@ -68,7 +78,7 @@ int main() {
     socket_pollfd.fd = socketfd;
     socket_pollfd.events = POLLIN | error_events;
     pollfds[1] = socket_pollfd;
-    char * socket_buffer = malloc(buffer_size);
+    char * socket_buffer = malloc_(buffer_size);
     int socket_size = 0;
     int socket_eof = 0;
 
