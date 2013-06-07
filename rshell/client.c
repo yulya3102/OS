@@ -159,11 +159,12 @@ int main() {
         }
         if (input_size == 0) {
             pollfds[1].events &= ~POLLOUT;
-        } else if (input_size < buffer_size - 2) {
+        }
+        if (input_size > 0 && input_size < buffer_size) {
             pollfds[1].events |= POLLOUT;
-            if (!input_eof) {
-                pollfds[0].events |= POLLIN;
-            }
+        }
+        if (input_size < buffer_size - 2 && !input_eof) {
+            pollfds[0].events |= POLLIN;
         }
         if (socket_eof || socket_size == buffer_size) {
             pollfds[1].events &= ~POLLIN;
