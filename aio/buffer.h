@@ -10,4 +10,5 @@ private:
     char * buf;
     int max_size, current_size;
     int fd;
+    bool eof;
 };
