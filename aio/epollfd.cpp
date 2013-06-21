@@ -47,6 +47,7 @@ void epollfd::unsubscribe(int fd, int what) {
     ev.events |= ~what;
     check("epoll_ctl", epoll_ctl(epoll_fd, EPOLL_CTL_MOD, fd, &ev));
     conts[fd].erase(conts[fd].find(what));
+    conts_err[fd].erase(conts_err[fd].find(what));
 }
 
 void epollfd::cycle() {
