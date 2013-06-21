@@ -25,3 +25,7 @@ void buffer::read() {
         }
     }
 }
+
+bool buffer::is_eof() {
+    return eof;
+}

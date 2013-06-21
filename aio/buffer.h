@@ -5,6 +5,7 @@ struct buffer {
     buffer(buffer const&) = delete;
     buffer& operator=(buffer const&) = delete;
     void read();
+    bool is_eof();
 
 private:
     char * buf;
