@@ -50,7 +50,13 @@ void epollfd::unsubscribe(int fd, int what) {
 
 void epollfd::cycle() {
     struct epoll_event events[MAXSIZE];
-    int n = check("epoll_wait", epoll_wait(epoll_fd, events, MAXSIZE, -1));
+    int n = epoll_wait(epoll_fd, events, MAXSIZE, -1);
+    if (n == -1) {
+        if (errno == EINTR) {
+            return;
+        }
+        throw std::runtime_error("epoll_wait failed");
+    }
     for (int i = 0; i < n; i++) {
         struct epoll_event ev = events[i];
         int fd = ev.data.fd;
