@@ -63,21 +63,27 @@ void epollfd::cycle() {
         struct epoll_event ev = events[i];
         int fd = ev.data.fd;
         if (ev.events & ERROR_EVENTS) {
-            for (auto it = conts_err[fd].begin(); it != conts_err[fd].end(); it++) {
+            for (auto it = conts_err[fd].begin(); it != conts_err[fd].end(); ) {
                 int event = (*it).first;
                 auto cont = (*it).second;
+                it++;
                 unsubscribe(fd, event);
                 cont();
             }
-            for (auto it = conts[fd].begin(); it != conts[fd].end(); it++) {
-                unsubscribe(fd, (*it).first);
+            for (auto it = conts[fd].begin(); it != conts[fd].end(); ) {
+                int event = it->first;
+                it++;
+                unsubscribe(fd, event);
             }
         } else {
-            for (auto it = conts[fd].begin(); it != conts[fd].end(); it++) {
+            for (auto it = conts[fd].begin(); it != conts[fd].end(); ) {
                 int event = (*it).first;
                 auto cont = (*it).second;
-                unsubscribe(fd, event);
-                cont();
+                it++;
+                if (event & ev.events) {
+                    unsubscribe(fd, event);
+                    cont();
+                }
             }
         }
     }
