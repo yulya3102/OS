@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <sys/epoll.h>
 #include <unistd.h>
+#include <cstring>
 
 #define UNUSED(x) (void)(x)
 
@@ -10,7 +11,7 @@ static const int ERROR_EVENTS = EPOLLERR;
 
 static int check(const char * message, int result) {
     if (result == -1) {
-        throw std::runtime_error(message);
+        throw std::runtime_error(std::string(message) + std::string(": ") + std::string(strerror(errno)));
     }
     return result;
 }
@@ -55,7 +56,7 @@ void epollfd::cycle() {
         if (errno == EINTR) {
             return;
         }
-        throw std::runtime_error("epoll_wait failed");
+        throw std::runtime_error("epoll_wait failed: " + std::string(strerror(errno)));
     }
     for (int i = 0; i < n; i++) {
         struct epoll_event ev = events[i];
