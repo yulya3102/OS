@@ -6,6 +6,7 @@ struct buffer {
     buffer& operator=(buffer const&) = delete;
     void read(int fd);
     void write(int fd);
+    ~buffer();
 
 private:
     char * buf;

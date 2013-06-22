@@ -29,6 +29,8 @@ int main() {
     int option = 1;
     setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, (char *) &option, sizeof(option));
     bind(socketfd, result->ai_addr, result->ai_addrlen);
+    free(result);
+    result = nullptr;
     listen(socketfd, LISTEN_BACKLOG);
     printf("waiting for connection\n");
     epollfd fd;

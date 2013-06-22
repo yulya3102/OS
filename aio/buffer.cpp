@@ -35,3 +35,7 @@ void buffer::write(int fd) {
         }
     }
 }
+
+buffer::~buffer() {
+    free(buf);
+}

@@ -25,11 +25,9 @@ void epollfd::subscribe(int fd, int what, std::function<void()> cont_ok, std::fu
         throw std::runtime_error("this fd already has this event");
     }
     if (epoll_events.find(fd) == epoll_events.end()) {
-        struct epoll_event ev;
-        ev.events = what;
-        ev.data.fd = fd;
-        check("epoll_ctl", epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev));
-        epoll_events[fd] = ev;
+        epoll_events[fd].events = what;
+        epoll_events[fd].data.fd = fd;
+        check("epoll_ctl", epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &epoll_events[fd]));
     } else {
         struct epoll_event ev = epoll_events[fd];
         ev.events |= what;
