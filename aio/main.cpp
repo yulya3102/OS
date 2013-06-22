@@ -34,9 +34,7 @@ int main() {
     listen(socketfd, LISTEN_BACKLOG);
     printf("waiting for connection\n");
     epollfd fd;
-    std::function<void(int, struct sockaddr*, socklen_t*)> acceptcont = [&fd, error_action] (int acceptedfd, struct sockaddr * addr, socklen_t * addrlen) {
-        UNUSED(addr);
-        UNUSED(addrlen);
+    std::function<void(int)> acceptcont = [&fd, error_action] (int acceptedfd) {
         buffer buf(4096);
         aread ar(fd, 0, buf, [] () {}, error_action);
         fd.cycle();
