@@ -5,8 +5,16 @@
 #include <stdexcept>
 #include <cstring>
 
+static void * malloc_(int size) {
+    void * ptr = malloc(size);
+    if (size != 0 && ptr == NULL) {
+        throw std::runtime_error("malloc failed");
+    }
+    return ptr;
+}
+
 buffer::buffer(int max_size)
-    : buf((char *) malloc(max_size))
+    : buf((char *) malloc_(max_size))
     , max_size(max_size)
     , current_size(0)
 {}

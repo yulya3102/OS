@@ -88,5 +88,5 @@ void epollfd::cycle() {
 }
 
 epollfd::~epollfd() {
-    close(epoll_fd);
+    check("close", close(epoll_fd));
 }
