@@ -3,6 +3,7 @@
 #include "aread.h"
 #include "awrite.h"
 #include "aaccept.h"
+#include "epoll.h"
 
 #include <iostream>
 #include <sys/types.h>
@@ -33,14 +34,16 @@ int main() {
     result = nullptr;
     listen(socketfd, LISTEN_BACKLOG);
     printf("waiting for connection\n");
-    epollfd fd;
-    std::function<void(int)> acceptcont = [&fd, error_action] (int acceptedfd) {
+    epoll e;
+    auto cont = [&e, error_action] (int fd) {
         buffer buf(4096);
-        aread ar(fd, 0, buf, [] () {}, error_action);
-        fd.cycle();
-        awrite aw(fd, acceptedfd, buf, [] () {}, error_action);
-        fd.cycle();
+        auto read_cont = [&e, fd, &buf, error_action] () {
+            e.write(fd, buf, [] () {}, error_action);
+            e.cycle();
+        };
+        e.read(0, buf, read_cont, error_action);
+        e.cycle();
     };
-    aaccept aa(fd, socketfd, NULL, NULL, acceptcont, error_action);
-    fd.cycle();
+    e.accept(socketfd, nullptr, nullptr, cont, error_action);
+    e.cycle();
 }
