@@ -2,7 +2,7 @@
 
 aread::aread(epollfd& e, int fd, buffer& buf, std::function<void()> cont_ok, std::function<void()> cont_err)
     : aoperation(e, EPOLLIN, fd) {
-    auto epollfd_cont_ok = [this, fd, &buf, &cont_ok] () {
+    auto epollfd_cont_ok = [this, fd, &buf, cont_ok] () {
         buf.read(fd);
         valid = false;
         cont_ok();
