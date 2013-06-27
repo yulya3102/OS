@@ -17,6 +17,7 @@
 */
 
 #include "var.h"
+#include "unary_expression.h"
 
 #include <functional>
 #include <iostream>
@@ -51,6 +52,10 @@ int main() {
     a.unsubscribe(s);
     a = 13;
     std::cout << "a == 13" << std::endl;
+    unary_expression<int> b(a, [] (int value) { return value; });
+    std::cout << "b == " << *b << std::endl;
+    a = 14;
+    std::cout << "b == " << *b << std::endl;
     //var<int> b(15);
     //binary_expression<int> expr(a, b, binary_expression<int>::any_change, [&a, &b] () { std::cout << "a + b = " << *a + *b << std::endl; });
     //a = 0;
