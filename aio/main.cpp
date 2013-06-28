@@ -18,6 +18,7 @@
 
 #include "var.h"
 #include "unary_expression.h"
+#include "binary_expression.h"
 
 #include <functional>
 #include <iostream>
@@ -39,9 +40,8 @@ int main() {
     std::function<void()> cont = [&a] () {
         std::cout << "val = " << *a << std::endl;
     };
-    var<int>::continuation_t c = cont;
     std::cout << "subscribing to val > 10" << std::endl;
-    s = a.subscribe(p, c);
+    s = a.subscribe(p, cont);
     std::cout << "subscribed to val > 10" << std::endl;
     a = 10;
     std::cout << "a == 10" << std::endl;
@@ -56,12 +56,13 @@ int main() {
     std::cout << "b == " << *b << std::endl;
     a = 14;
     std::cout << "b == " << *b << std::endl;
-    //var<int> b(15);
-    //binary_expression<int> expr(a, b, binary_expression<int>::any_change, [&a, &b] () { std::cout << "a + b = " << *a + *b << std::endl; });
-    //a = 0;
-    //b = 2;
-    //a = 5;
-    //b = 10;
+    binary_expression<int> c(a, b, [] (int l, int r) { return l + r; });
+    auto print_c = [&c] () {std::cout << "c = a + b = " << *c << std::endl; };
+    print_c();
+    a = 1;
+    print_c();
+    a = 10;
+    print_c();
 }
 /*
 int main() {
