@@ -31,6 +31,7 @@ struct binary_expression : expression<T> {
     ~binary_expression() {
         left->unsubscribe(sleft);
         right->unsubscribe(sright);
+        delete value;
     }
 
 private:

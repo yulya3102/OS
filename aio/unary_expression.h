@@ -27,6 +27,7 @@ struct unary_expression : expression<T> {
 
     ~unary_expression() {
         expr->unsubscribe(s);
+        delete value;
     }
 
 private:
