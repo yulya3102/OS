@@ -15,7 +15,10 @@ struct unary_expression : expression<T> {
     unary_expression(expression<T>& expr, operation_t operation)
         : value(new T(operation(*expr)))
         , expr(&expr)
-        , s(expr.subscribe(expression<T>::any_change, [this, operation] () { *value = operation(**(this->expr)); }))
+        , s(expr.subscribe(expression<T>::any_change, [this, operation] () {
+                *value = operation(**(this->expr));
+                this->handleChange();
+            }))
     {}
 
     unary_expression& operator=(unary_expression const& other) = delete;

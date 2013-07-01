@@ -14,7 +14,10 @@ struct binary_expression : expression<T> {
 
     binary_expression(expression<T>& left, expression<T>& right, operation_t operation)
         : value(new T(operation(*left, *right)))
-        , update_value([this, operation] () { *value = operation(**(this->left), **(this->right)); })
+        , update_value([this, operation, &left, &right] () {
+                *value = operation(*left, *right);
+                this->handleChange();
+            })
         , left(&left)
         , right(&right)
         , sleft(left.subscribe(expression<T>::any_change, update_value))
