@@ -8,6 +8,10 @@ struct var : expression<T> {
     typedef typename expression<T>::continuation_t continuation_t;
     typedef typename expression<T>::connection_t connection_t;
 
+    var()
+        : value(T())
+    {}
+
     var(T value)
         : value(value)
     {}
