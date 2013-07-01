@@ -9,6 +9,7 @@ struct buffer {
     void read(int fd);
     void read(int fd, int size);
     void write(int fd);
+    void write(void * dest, int size);
     var<int>& size();
     ~buffer();
 

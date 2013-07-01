@@ -49,6 +49,15 @@ void buffer::write(int fd) {
     }
 }
 
+void buffer::write(void * dest, int size) {
+    size_t d = std::min(size, *current_size);
+    if (d > 0) {
+        memcpy(dest, buf, d);
+        memmove(buf, buf + d, *current_size - d);
+        current_size = *current_size - d;
+    }
+}
+
 var<int>& buffer::size() {
     return current_size;
 }
