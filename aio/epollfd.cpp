@@ -20,7 +20,7 @@ epollfd::epollfd()
     : epoll_fd(check("epoll_create", epoll_create(MAXSIZE)))
     {}
 
-void epollfd::subscribe(int fd, int what, std::function<void()> cont_ok, std::function<void()> cont_err) {
+void epollfd::subscribe(int fd, int what, std::function<void()> cont_ok, std::function<void()> cont_err, std::function<void()> cont_epollhup) {
     if (conts.find(fd) != conts.end() && conts[fd].find(what) != conts[fd].end()) {
         throw std::runtime_error("this fd already has this event");
     }
@@ -35,6 +35,7 @@ void epollfd::subscribe(int fd, int what, std::function<void()> cont_ok, std::fu
     }
     conts[fd][what] = cont_ok;
     conts_err[fd][what] = cont_err;
+    conts_epollhup[fd][what] = cont_epollhup;
 }
 
 void epollfd::unsubscribe(int fd, int what) {
@@ -46,6 +47,7 @@ void epollfd::unsubscribe(int fd, int what) {
     check("epoll_ctl", epoll_ctl(epoll_fd, EPOLL_CTL_MOD, fd, &ev));
     conts[fd].erase(conts[fd].find(what));
     conts_err[fd].erase(conts_err[fd].find(what));
+    conts_epollhup[fd].erase(conts_epollhup[fd].find(what));
 }
 
 void epollfd::cycle() {
@@ -77,10 +79,14 @@ void epollfd::cycle() {
             for (auto it = conts[fd].begin(); it != conts[fd].end(); ) {
                 int event = (*it).first;
                 auto cont = (*it).second;
+                auto epollhup_cont = conts_epollhup[fd][event];
                 it++;
                 if (event & ev.events) {
                     unsubscribe(fd, event);
                     cont();
+                }
+                if (EPOLLHUP & ev.events) {
+                    epollhup_cont();
                 }
             }
         }

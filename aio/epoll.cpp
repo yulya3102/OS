@@ -10,7 +10,7 @@
 
 epoll::epoll() {}
 
-void epoll::read(int fd, buffer& buf, std::function<void()> cont_ok, std::function<void()> cont_err) {
+void epoll::read(int fd, buffer& buf, std::function<void()> cont_ok, std::function<void()> cont_err, std::function<void()> cont_epollhup) {
     operations.push_back(nullptr);
     aoperation *& ar = operations.back();
     auto cont = [this, &ar, cont_ok] () {
@@ -19,10 +19,10 @@ void epoll::read(int fd, buffer& buf, std::function<void()> cont_ok, std::functi
         operations.remove(ar);
         cont_ok();
     };
-    ar = new aread(e, fd, buf, cont, cont_err);
+    ar = new aread(e, fd, buf, cont, cont_err, cont_epollhup);
 }
 
-void epoll::write(int fd, buffer& buf, std::function<void()> cont_ok, std::function<void()> cont_err) {
+void epoll::write(int fd, buffer& buf, std::function<void()> cont_ok, std::function<void()> cont_err, std::function<void()> cont_epollhup) {
     operations.push_back(nullptr);
     aoperation *& aw = operations.back();
     auto cont = [this, &aw, cont_ok] () {
@@ -31,10 +31,10 @@ void epoll::write(int fd, buffer& buf, std::function<void()> cont_ok, std::funct
         operations.remove(aw);
         cont_ok();
     };
-    aw = new awrite(e, fd, buf, cont, cont_err);
+    aw = new awrite(e, fd, buf, cont, cont_err, cont_epollhup);
 }
 
-void epoll::accept(int fd, struct sockaddr * addr, socklen_t * addrlen, std::function<void(int)> cont_ok, std::function<void()> cont_err) {
+void epoll::accept(int fd, struct sockaddr * addr, socklen_t * addrlen, std::function<void(int)> cont_ok, std::function<void()> cont_err, std::function<void()> cont_epollhup) {
     operations.push_back(nullptr);
     aoperation *& aa = operations.back();
     auto cont = [this, &aa, cont_ok] (int fd) {
@@ -43,7 +43,7 @@ void epoll::accept(int fd, struct sockaddr * addr, socklen_t * addrlen, std::fun
         operations.remove(aa);
         cont_ok(fd);
     };
-    aa = new aaccept(e, fd, addr, addrlen, cont, cont_err);
+    aa = new aaccept(e, fd, addr, addrlen, cont, cont_err, cont_epollhup);
 }
 
 void epoll::cycle() {

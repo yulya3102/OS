@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <cstring>
 
-aaccept::aaccept(epollfd& e, int fd, struct sockaddr * addr, socklen_t * addrlen, std::function<void(int)> cont_ok, std::function<void()> cont_err)
+aaccept::aaccept(epollfd& e, int fd, struct sockaddr * addr, socklen_t * addrlen, std::function<void(int)> cont_ok, std::function<void()> cont_err, std::function<void()> cont_epollhup)
     : aoperation(e, EPOLLIN, fd) {
     std::function<void()> cont = [this, fd, addr, addrlen, cont_ok] () {
         valid = false;
@@ -16,5 +16,5 @@ aaccept::aaccept(epollfd& e, int fd, struct sockaddr * addr, socklen_t * addrlen
         }
         cont_ok(acceptedfd);
     };
-    e.subscribe(fd, event, cont, cont_err);
+    e.subscribe(fd, event, cont, cont_err, cont_epollhup);
 }
