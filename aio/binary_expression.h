@@ -4,15 +4,16 @@
 
 #include <functional>
 
-template <typename T>
+template <typename T, typename Left, typename Right>
 struct binary_expression : expression<T> {
-    typedef std::function<T(T, T)> operation_t;
-    typedef typename expression<T>::subscription_t subscription_t;
+    typedef std::function<T(Left, Right)> operation_t;
+    typedef typename expression<Left>::subscription_t left_subscription_t;;
+    typedef typename expression<Right>::subscription_t right_subscription_t;;
 
     binary_expression(const binary_expression& other) = delete;
     binary_expression(binary_expression && other) = delete;
 
-    binary_expression(expression<T>& left, expression<T>& right, operation_t operation)
+    binary_expression(expression<Left>& left, expression<Right>& right, operation_t operation)
         : value(new T(operation(*left, *right)))
         , update_value([this, operation, &left, &right] () {
                 *value = operation(*left, *right);
@@ -20,9 +21,9 @@ struct binary_expression : expression<T> {
             })
         , left(&left)
         , right(&right)
-        , sleft(left.subscribe(expression<T>::any_change, update_value))
-        , sright(right.subscribe(expression<T>::any_change, update_value))
-    {}
+        , sleft(left.subscribe(expression<Left>::any_change, update_value))
+        , sright(right.subscribe(expression<Right>::any_change, update_value)) {
+    }
 
     binary_expression& operator=(binary_expression const& other) = delete;
     binary_expression& operator=(binary_expression && other) = delete;
@@ -40,7 +41,8 @@ struct binary_expression : expression<T> {
 private:
     T * value;
     std::function<void()> update_value;
-    expression<T> * left;
-    expression<T> * right;
-    subscription_t sleft, sright;
+    expression<Left> * left;
+    expression<Right> * right;
+    left_subscription_t sleft;
+    right_subscription_t sright;
 };

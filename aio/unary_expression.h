@@ -4,18 +4,18 @@
 
 #include <functional>
 
-template <typename T>
+template <typename T, typename Arg>
 struct unary_expression : expression<T> {
-    typedef std::function<T(T)> operation_t;
-    typedef typename expression<T>::subscription_t subscription_t;
+    typedef std::function<T(Arg)> operation_t;
+    typedef typename expression<Arg>::subscription_t subscription_t;
 
     unary_expression(const unary_expression& other) = delete;
     unary_expression(unary_expression && other) = delete;
 
-    unary_expression(expression<T>& expr, operation_t operation)
+    unary_expression(expression<Arg>& expr, operation_t operation)
         : value(new T(operation(*expr)))
         , expr(&expr)
-        , s(expr.subscribe(expression<T>::any_change, [this, operation] () {
+        , s(expr.subscribe(expression<Arg>::any_change, [this, operation] () {
                 *value = operation(**(this->expr));
                 this->handleChange();
             }))
@@ -35,6 +35,6 @@ struct unary_expression : expression<T> {
 
 private:
     T * value;
-    expression<T> * expr;
+    expression<Arg> * expr;
     subscription_t s;
 };
