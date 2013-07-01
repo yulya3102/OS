@@ -7,6 +7,7 @@ struct buffer {
     buffer(buffer const&) = delete;
     buffer& operator=(buffer const&) = delete;
     void read(int fd);
+    void read(int fd, int size);
     void write(int fd);
     var<int>& size();
     ~buffer();

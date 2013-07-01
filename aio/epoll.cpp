@@ -11,6 +11,10 @@
 epoll::epoll() {}
 
 void epoll::read(int fd, buffer& buf, std::function<void()> cont_ok, std::function<void()> cont_err, std::function<void()> cont_epollhup) {
+    read(fd, buf, buf.max_size, cont_ok, cont_err, cont_epollhup);
+}
+
+void epoll::read(int fd, buffer& buf, int limit, std::function<void()> cont_ok, std::function<void()> cont_err, std::function<void()> cont_epollhup) {
     operations.push_back(nullptr);
     aoperation *& ar = operations.back();
     auto cont = [this, &ar, cont_ok] () {
@@ -19,7 +23,7 @@ void epoll::read(int fd, buffer& buf, std::function<void()> cont_ok, std::functi
         operations.remove(ar);
         cont_ok();
     };
-    ar = new aread(e, fd, buf, cont, cont_err, cont_epollhup);
+    ar = new aread(e, fd, buf, limit, cont, cont_err, cont_epollhup);
 }
 
 void epoll::write(int fd, buffer& buf, std::function<void()> cont_ok, std::function<void()> cont_err, std::function<void()> cont_epollhup) {
