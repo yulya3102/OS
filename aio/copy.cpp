@@ -28,6 +28,7 @@ static void start_timer(int timerfd) {
 
 static void stop_timer(int timerfd) {
     struct itimerspec new_value;
+    memset(&new_value, 0, sizeof(struct itimerspec));
     new_value.it_value.tv_sec = 0;
     new_value.it_value.tv_nsec = 0;
     check("timerfd_settime", timerfd_settime(timerfd, TFD_TIMER_ABSTIME, &new_value, nullptr));
