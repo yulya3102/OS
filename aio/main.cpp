@@ -80,13 +80,13 @@ int main() {
         error_action();
         _exit(1);
     }
-    int socketfd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    int socketfd = check("socket", socket(result->ai_family, result->ai_socktype, result->ai_protocol));
     int option = 1;
-    setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, (char *) &option, sizeof(option));
-    bind(socketfd, result->ai_addr, result->ai_addrlen);
+    check("setsockopt", setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, (char *) &option, sizeof(option)));
+    check("bind", bind(socketfd, result->ai_addr, result->ai_addrlen));
     free(result);
     result = nullptr;
-    listen(socketfd, LISTEN_BACKLOG);
+    check("listen", listen(socketfd, LISTEN_BACKLOG));
     printf("waiting for connection\n");
     epoll e;
     auto cont = [&e, error_action] (int fd) {

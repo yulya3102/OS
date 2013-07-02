@@ -1,6 +1,8 @@
 #include "autofd.h"
 #include <algorithm>
 #include <unistd.h>
+#include <stdexcept>
+#include <cstring>
 
 autofd::autofd(int fd)
     : fd(fd)
@@ -22,6 +24,8 @@ const int& autofd::operator*() const {
 
 autofd::~autofd() {
     if (fd != -1) {
-        close(fd);
+        if (close(fd) == -1) {
+            throw std::runtime_error(std::string("close: ") + std::string(strerror(errno)));
+        }
     }
 }

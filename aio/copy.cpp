@@ -6,27 +6,35 @@
 #include <sys/timerfd.h>
 #include <stdexcept>
 #include <functional>
+#include <cstring>
+
+static int check(std::string message, int result) {
+    if (result == -1) {
+        throw std::runtime_error(message + ": " + std::string(strerror(errno)));
+    }
+    return result;
+}
 
 static void start_timer(int timerfd) {
     struct itimerspec new_value;
     struct timespec now;
-    clock_gettime(CLOCK_REALTIME, &now);
+    check("clock_gettime", clock_gettime(CLOCK_REALTIME, &now));
     new_value.it_value.tv_sec = now.tv_sec;
     new_value.it_value.tv_nsec = now.tv_nsec;
     new_value.it_interval.tv_sec = 1;
     new_value.it_interval.tv_nsec = 0;
-    timerfd_settime(timerfd, TFD_TIMER_ABSTIME, &new_value, nullptr);
+    check("timerfd_settime", timerfd_settime(timerfd, TFD_TIMER_ABSTIME, &new_value, nullptr));
 }
 
 static void stop_timer(int timerfd) {
     struct itimerspec new_value;
     new_value.it_value.tv_sec = 0;
     new_value.it_value.tv_nsec = 0;
-    timerfd_settime(timerfd, TFD_TIMER_ABSTIME, &new_value, nullptr);
+    check("timerfd_settime", timerfd_settime(timerfd, TFD_TIMER_ABSTIME, &new_value, nullptr));
 }
 
 copy::copy(int fromfd, int tofd, int speed, int maxspeed)
-    : timerfd(timerfd_create(CLOCK_REALTIME, 0))
+    : timerfd(check("timerfd_create", timerfd_create(CLOCK_REALTIME, 0)))
     , error_cont([] () { throw new std::runtime_error("copying failed"); }) {
 
     var<uint64_t>::predicate_t is_positive = [] (uint64_t value) { return value > 0; };
