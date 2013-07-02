@@ -79,7 +79,7 @@ copy::copy(int fromfd, int tofd, int speed, int maxspeed)
             subscribed_to_write = true;
         };
     auto subscribe_to_timerfd = [this, &timerbuf, &exp, &subscribed_to_timerfd] () {
-        e.read(timerfd, timerbuf, [this, &timerbuf, &exp, &subscribed_to_timerfd] () {
+        e.read(*timerfd, timerbuf, [this, &timerbuf, &exp, &subscribed_to_timerfd] () {
                 if (*(timerbuf.size()) != sizeof(uint64_t)) {
                     error_cont();
                 }
@@ -104,12 +104,12 @@ copy::copy(int fromfd, int tofd, int speed, int maxspeed)
     };
     exp.subscribe(is_positive, timer_action);
 
-    start_timer(timerfd);
+    start_timer(*timerfd);
     while (!(*eof) || *databuf.size() > 0) {
         if (!subscribed_to_timerfd) {
             subscribe_to_timerfd();
         }
         e.cycle();
     }
-    stop_timer(timerfd);
+    stop_timer(*timerfd);
 }

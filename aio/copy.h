@@ -1,6 +1,7 @@
 #pragma once
 
 #include "epoll.h"
+#include "autofd.h"
 
 #include <functional>
 #include <stdexcept>
@@ -14,7 +15,7 @@ struct copy {
     ~copy() = default;
 
 private:
-    int timerfd;
+    autofd timerfd;
     epoll e;
     std::function<void()> error_cont;
 };
