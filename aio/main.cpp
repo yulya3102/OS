@@ -1,21 +1,16 @@
-/*
-#include "epollfd.h"
-#include "buffer.h"
-#include "aread.h"
-#include "awrite.h"
-#include "aaccept.h"
-#include "epoll.h"
+#include "copy.h"
 
 #include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
+#include <stdexcept>
 
 #define LISTEN_BACKLOG 10
 #define UNUSED(x) (void)(x)
-*/
 
+/*
 #include "var.h"
 #include "unary_expression.h"
 #include "binary_expression.h"
@@ -64,7 +59,15 @@ int main() {
     a = 10;
     print_c();
 }
-/*
+*/
+
+int check(std::string message, int result) {
+    if (result == -1) {
+        throw std::runtime_error(message + ": " + std::string(strerror(errno)));
+    }
+    return result;
+}
+
 int main() {
     auto error_action = [] () { std::cout << "error" << std::endl; };
     struct addrinfo hints;
@@ -87,15 +90,10 @@ int main() {
     printf("waiting for connection\n");
     epoll e;
     auto cont = [&e, error_action] (int fd) {
-        buffer buf(4096);
-        auto read_cont = [&e, fd, &buf, error_action] () {
-            e.write(fd, buf, [] () {}, error_action);
-            e.cycle();
-        };
-        e.read(0, buf, read_cont, error_action);
-        e.cycle();
+        autofd socketfd(fd);
+        printf("connected\n");
+        copy(0, *socketfd, 4 * 1024 * 1024, 6 * 1024 * 1024);
     };
-    e.accept(socketfd, nullptr, nullptr, cont, error_action);
+    e.accept(socketfd, nullptr, nullptr, cont, error_action, [] () {});
     e.cycle();
 }
-*/
