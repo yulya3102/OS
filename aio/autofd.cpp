@@ -16,6 +16,10 @@ autofd& autofd::operator=(autofd && other) {
     return *this;
 }
 
+const int& autofd::operator*() const {
+    return fd;
+}
+
 autofd::~autofd() {
     if (fd != -1) {
         close(fd);

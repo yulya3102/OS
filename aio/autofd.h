@@ -6,6 +6,7 @@ struct autofd {
     autofd(autofd &&);
     autofd& operator=(autofd const&) = delete;
     autofd& operator=(autofd &&);
+    const int& operator*() const;
     ~autofd();
 private:
     int fd;
