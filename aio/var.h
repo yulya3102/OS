@@ -22,11 +22,13 @@ struct var : expression<T> {
     {}
     */
 
-    var(const var& other) = delete;
+    var(const var& other)
+        : value(other.value)
+    {}
 
     var(var && other) = delete; // connections? changing value?
-    var& operator=(const var& other) = delete;
     var& operator=(var && other) = delete;
+    var& operator=(const var& other) = delete; // manager?
 
     T operator=(T newValue) {
         if (value != newValue) {
