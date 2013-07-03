@@ -107,9 +107,7 @@ copy::copy(int fromfd, int tofd, int speed, int maxspeed)
 
     auto timer_action = [&current_speed, &exp, speed, maxspeed] () {
         int cur = *current_speed;
-        current_speed = 0;
         current_speed = std::min(cur + speed, maxspeed);
-        exp = 0;
     };
     exp.subscribe(is_positive, timer_action);
 

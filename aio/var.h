@@ -31,10 +31,8 @@ struct var : expression<T> {
     var& operator=(const var& other) = delete; // manager?
 
     T operator=(T newValue) {
-        if (value != newValue) {
-            value = newValue;
-            this->handleChange();
-        }
+        value = newValue;
+        this->handleChange();
         return **this;
     }
 
