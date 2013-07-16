@@ -6,9 +6,6 @@
 
 namespace details {
     template <typename T>
-    struct manager_t;
-
-    template <typename T>
     struct subscription_t;
 }
 
@@ -18,7 +15,6 @@ struct expression {
     typedef std::function<void()> continuation_t;
     typedef std::function<void(T)> connection_t;
     typedef details::subscription_t<T> subscription_t;
-    typedef details::manager_t<connection_t> manager_t;
     typedef typename std::list<connection_t>::iterator connection_iterator;
 
     subscription_t subscribe(predicate_t predicate, continuation_t cont) {
@@ -41,13 +37,13 @@ struct expression {
 
 protected:
     void handleChange() {
-        for (connection_iterator it = connections.begin(); it != connections.end(); ) {
-            connection_iterator oldIt = it;
-            ++it;
-            manager.addEvent(*oldIt);
+        for (connection_iterator it = connections.begin(); it != connections.end(); ++it) {
+            if (*it != nullptr) {
+                pending.push(*it);
+            }
         }
-        manager.run(this);
-        if (!manager.isRunning()) {
+        run();
+        if (isRunning) {
             for (connection_iterator it = connections.begin(); it != connections.end(); ) {
                 connection_iterator oldIt = it;
                 ++it;
@@ -58,53 +54,29 @@ protected:
         }
     }
 
+    void run() {
+        if (!isRunning) {
+            isRunning = true;
+            while (!pending.empty()) {
+                connection_t connection = pending.top();
+                connection(**this);
+                pending.pop();
+            }
+            isRunning = false;
+        }
+    }
+
+    expression()
+        : isRunning(false)
+    {}
+
 private:
-    manager_t manager;
+    std::stack<connection_t> pending;
+    bool isRunning;
     std::list<connection_t> connections;
 };
 
 namespace details {
-    template <typename T>
-    struct manager_t {
-        manager_t()
-            : isRunning_(false)
-        {}
-
-        manager_t(const manager_t&) = delete;
-        manager_t(manager_t &&) = delete;
-        manager_t& operator=(const manager_t&) = delete;
-        manager_t& operator=(manager_t &&) = delete;
-
-        void addEvent(T const& connection) {
-            if (connection != nullptr) {
-                pending.push(connection);
-            }
-        }
-
-        bool isRunning() const {
-            return isRunning_;
-        }
-
-        template<typename This>
-        void run(This value) {
-            if (!isRunning_) {
-                isRunning_ = true;
-                while (!pending.empty()) {
-                    T connection = pending.top();
-                    connection(**value);
-                    pending.pop();
-                }
-                isRunning_ = false;
-            }
-        }
-
-        ~manager_t() = default;
-
-    private:
-        std::stack<T> pending;
-        bool isRunning_;
-    };
-
     template <typename T>
     struct subscription_t {
         friend struct expression<T>;
