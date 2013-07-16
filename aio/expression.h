@@ -23,7 +23,7 @@ struct expression {
                     cont();
                 }
             });
-        return subscription_t(connections.begin(), predicate, cont);
+        return subscription_t(connections.begin());
     };
 
     void unsubscribe(subscription_t s) {
@@ -80,21 +80,15 @@ namespace details {
     template <typename T>
     struct subscription_t {
         friend struct expression<T>;
-        typedef typename expression<T>::predicate_t predicate_t;
 
         typedef typename expression<T>::connection_iterator iterator_t;
-        typedef std::function<void()> continuation_t;
 
-        subscription_t(iterator_t it, predicate_t predicate, continuation_t cont)
+        subscription_t(iterator_t it)
             : it(it)
-            , predicate(predicate)
-            , cont(cont)
         {}
 
     private:
         iterator_t it;
-        predicate_t predicate;
-        std::function<void()> cont;
     };
 }
 
