@@ -3,15 +3,16 @@
 #include <stddef.h>
 #include <string.h>
 
+extern "C"
 void * malloc(size_t size)
 {
     if (!size)
         return NULL;
 
-    size_t * addr = mmap(NULL, size + sizeof(size_t),
+    size_t * addr = reinterpret_cast<size_t *>(mmap(NULL, size + sizeof(size_t),
                          PROT_READ | PROT_WRITE,
                          MAP_ANONYMOUS | MAP_PRIVATE,
-                         -1, 0);
+                         -1, 0));
     if (addr == MAP_FAILED)
         return NULL;
 
@@ -19,16 +20,18 @@ void * malloc(size_t size)
     return addr + 1;
 }
 
+extern "C"
 void free(void * ptr)
 {
     if (!ptr)
         return;
 
-    size_t * addr = ptr;
+    size_t * addr = reinterpret_cast<size_t *>(ptr);
     addr--;
     munmap(addr, *addr);
 }
 
+extern "C"
 void * calloc(size_t nmemb, size_t size)
 {
     if (!nmemb || !size)
@@ -41,6 +44,7 @@ void * calloc(size_t nmemb, size_t size)
     return NULL;
 }
 
+extern "C"
 void * realloc(void * ptr, size_t size)
 {
     if (!ptr)

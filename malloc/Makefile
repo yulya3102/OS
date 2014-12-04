@@ -2,7 +2,7 @@ all:
 	make malloc
 
 malloc:
-	gcc -Wall -shared -o libmalloc.so -fPIC malloc.c
+	g++ -std=c++11 -Wall -shared -o libmalloc.so -fPIC malloc.cpp
 
 clean:
 	rm libmalloc.so
