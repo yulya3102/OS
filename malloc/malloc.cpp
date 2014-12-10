@@ -91,6 +91,11 @@ namespace
         {
             return allocate_new_block(bytes_to_pages(size));
         }
+
+        void free_block(const memory_block_t & block)
+        {
+            munmap(block.addr(), block.size());
+        }
     };
 
     blocks_list_t free_blocks;
@@ -113,8 +118,7 @@ void free(void * ptr)
         return;
 
     data_block_t data_block(reinterpret_cast<ptr_t>(ptr));
-    memory_block_t block = data_block.to_memory_block();
-    munmap(block.addr(), block.size());
+    free_blocks.free_block(data_block.to_memory_block());
 }
 
 extern "C"
