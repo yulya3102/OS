@@ -185,3 +185,34 @@ void * realloc(void * ptr, size_t size)
     free(ptr);
     return new_ptr;
 }
+
+extern "C"
+int posix_memalign(void ** memptr, size_t alignment, size_t size)
+{
+    *memptr = nullptr;
+    return -1;
+}
+
+extern "C"
+void * aligned_alloc(size_t alignment, size_t size)
+{
+    return nullptr;
+}
+
+extern "C"
+void * valloc(size_t size)
+{
+    return nullptr;
+}
+
+extern "C"
+void * memalign(size_t alignment, size_t size)
+{
+    return nullptr;
+}
+
+extern "C"
+void * pvalloc(size_t size)
+{
+    return nullptr;
+}
