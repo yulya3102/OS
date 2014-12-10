@@ -161,14 +161,8 @@ void * realloc(void * ptr, size_t size)
     if (!ptr)
         return malloc(size);
 
-    data_block_t old_block(reinterpret_cast<ptr_t>(ptr));
-    size_t old_size = old_block.size();
-    if (size <= old_size)
-        return old_block.addr();
-
-    memory_block_t new_memory_block = free_blocks.next_free_block(size + sizeof(size_t));
-    data_block_t new_block(new_memory_block);
-    memcpy(new_block.addr(), old_block.addr(), old_block.size());
-    free(old_block.addr());
-    return new_block.addr();
+    void * new_ptr = malloc(size);
+    memcpy(new_ptr, ptr, size);
+    free(ptr);
+    return new_ptr;
 }
