@@ -147,7 +147,16 @@ void * malloc(size_t size)
     if (!size)
         return NULL;
 
-    memory_block_t block = free_blocks.next_free_block(size + sizeof(size_t));
+    size_t real_size = ((size > sizeof(ptr_t)) ? size : sizeof(ptr_t)) + sizeof(size_t);
+    memory_block_t block = free_blocks.next_free_block(real_size);
+    if (block.size() - real_size > sizeof(size_t) + sizeof(ptr_t))
+    {
+        memory_block_t free_block(block.addr() + real_size);
+        free_block.size() = block.size() - real_size;
+        block.size() = real_size;
+        block.next() = free_block.addr();
+        free_blocks.free_block(free_block);
+    }
     return data_block_t(block).addr();
 }
 
