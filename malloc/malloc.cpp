@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <mutex>
 
 namespace
 {
@@ -28,6 +29,16 @@ namespace
         ptr_t addr() const
         {
             return addr_;
+        }
+
+        ptr_t next() const
+        {
+            return *reinterpret_cast<ptr_t *>(addr_ + size() - sizeof(ptr_t));
+        }
+
+        ptr_t & next()
+        {
+            return *reinterpret_cast<ptr_t *>(addr_ + size() - sizeof(ptr_t));
         }
 
     private:
@@ -87,15 +98,25 @@ namespace
 
     struct blocks_list_t
     {
+        blocks_list_t()
+            : head(nullptr)
+        {}
+
         memory_block_t next_free_block(size_t size)
         {
             return allocate_new_block(bytes_to_pages(size));
         }
 
-        void free_block(const memory_block_t & block)
+        void free_block(memory_block_t block)
         {
-            munmap(block.addr(), block.size());
+            head_lock.lock();
+            block.next() = head;
+            head = block.addr();
+            head_lock.unlock();
         }
+
+        std::mutex head_lock;
+        ptr_t head;
     };
 
     blocks_list_t free_blocks;
