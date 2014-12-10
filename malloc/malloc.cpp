@@ -84,6 +84,11 @@ namespace
         result.size() = size;
         return result;
     }
+
+    memory_block_t next_free_block(size_t size)
+    {
+        return allocate_new_block(bytes_to_pages(size));
+    }
 }
 
 extern "C"
@@ -92,7 +97,7 @@ void * malloc(size_t size)
     if (!size)
         return NULL;
 
-    memory_block_t block = allocate_new_block(bytes_to_pages(size + sizeof(size_t)));
+    memory_block_t block = next_free_block(size + sizeof(size_t));
     return data_block_t(block).addr();
 }
 
@@ -131,7 +136,7 @@ void * realloc(void * ptr, size_t size)
     if (size <= old_size)
         return old_block.addr();
 
-    memory_block_t new_memory_block = allocate_new_block(bytes_to_pages(size + sizeof(size_t)));
+    memory_block_t new_memory_block = next_free_block(size + sizeof(size_t));
     data_block_t new_block(new_memory_block);
     memcpy(new_block.addr(), old_block.addr(), old_block.size());
     free(old_block.addr());
