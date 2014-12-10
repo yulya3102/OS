@@ -104,7 +104,26 @@ namespace
 
         memory_block_t next_free_block(size_t size)
         {
-            return allocate_new_block(bytes_to_pages(size));
+            head_lock.lock();
+            ptr_t * prev = &head;
+            memory_block_t block(head);
+            while (block.addr() && block.size() < size)
+            {
+                prev = &block.next();
+                block = block.next();
+            }
+            if (!block.addr())
+            {
+                head_lock.unlock();
+                return allocate_new_block(bytes_to_pages(size));
+            }
+            else
+            {
+                *prev = block.next();
+                block.next() = nullptr;
+                head_lock.unlock();
+                return block;
+            }
         }
 
         void free_block(memory_block_t block)
