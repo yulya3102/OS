@@ -4,6 +4,7 @@ project(malloc)
 set(CMAKE_CXX_FLAGS "-std=c++11 -Wall ${CMAKE_CXX_FLAGS}")
 
 set(SOURCES
+    linear.h linear.cpp
     common.h common.cpp
     malloc.cpp
 )
