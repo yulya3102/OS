@@ -28,7 +28,7 @@ void * malloc(size_t size)
         block.next() = free_block.addr();
         allocator.free_block(free_block);
     }
-    return data_block_t(block).addr();
+    return block.to_data_block().addr();
 }
 
 extern "C"
@@ -38,7 +38,7 @@ void free(void * ptr)
         return;
 
     data_block_t data_block(reinterpret_cast<ptr_t>(ptr));
-    allocator.free_block(data_block.to_memory_block());
+    allocator.free_block(linear::block_t(data_block));
 }
 
 extern "C"
