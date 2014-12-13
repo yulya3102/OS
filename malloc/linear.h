@@ -8,6 +8,18 @@ namespace alloc
 {
     namespace linear
     {
+        struct memory_block_t
+        {
+            memory_block_t(ptr_t addr);
+            size_t size() const;
+            size_t & size();
+            ptr_t addr() const;
+            ptr_t next() const;
+            ptr_t & next();
+        private:
+            ptr_t addr_;
+        };
+
         struct linear_allocator_t
         {
             linear_allocator_t();
