@@ -9,7 +9,7 @@ namespace
 {
     using namespace alloc;
 
-    linear_allocator_t allocator;
+    linear::linear_allocator_t allocator;
 }
 
 extern "C"
