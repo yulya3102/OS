@@ -8,9 +8,9 @@ namespace alloc
 {
     namespace linear
     {
-        struct memory_block_t
+        struct block_t
         {
-            memory_block_t(ptr_t addr);
+            block_t(ptr_t addr);
             size_t size() const;
             size_t & size();
             ptr_t addr() const;
@@ -23,8 +23,8 @@ namespace alloc
         struct linear_allocator_t
         {
             linear_allocator_t();
-            memory_block_t allocate_block(size_t size);
-            void free_block(memory_block_t block);
+            block_t allocate_block(size_t size);
+            void free_block(block_t block);
         private:
             std::mutex lock;
             ptr_t head;

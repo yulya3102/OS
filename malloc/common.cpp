@@ -5,7 +5,7 @@
 
 namespace alloc
 {
-    data_block_t::data_block_t(const linear::memory_block_t & block)
+    data_block_t::data_block_t(const linear::block_t & block)
         : addr_(block.addr() + sizeof(size_t))
     {}
 
@@ -18,9 +18,9 @@ namespace alloc
         return addr_;
     }
 
-    linear::memory_block_t data_block_t::to_memory_block() const
+    linear::block_t data_block_t::to_memory_block() const
     {
-        return linear::memory_block_t(addr_ - sizeof(size_t));
+        return linear::block_t(addr_ - sizeof(size_t));
     }
 
     size_t data_block_t::size() const
@@ -35,7 +35,7 @@ namespace alloc
         return bytes / PAGE_SIZE;
     }
 
-    linear::memory_block_t allocate_new_block(size_t pages)
+    linear::block_t allocate_new_block(size_t pages)
     {
         size_t size = pages * PAGE_SIZE;
         void * addr = mmap(nullptr, size,
@@ -45,7 +45,7 @@ namespace alloc
         if (addr == MAP_FAILED)
             return nullptr;
 
-        linear::memory_block_t result(reinterpret_cast<ptr_t>(addr));
+        linear::block_t result(reinterpret_cast<ptr_t>(addr));
         result.size() = size;
         return result;
     }

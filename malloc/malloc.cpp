@@ -19,10 +19,10 @@ void * malloc(size_t size)
         return NULL;
 
     size_t real_size = ((size > sizeof(ptr_t)) ? size : sizeof(ptr_t)) + sizeof(size_t);
-    linear::memory_block_t block = allocator.allocate_block(real_size);
+    linear::block_t block = allocator.allocate_block(real_size);
     if (block.size() - real_size > sizeof(size_t) + sizeof(ptr_t))
     {
-        linear::memory_block_t free_block(block.addr() + real_size);
+        linear::block_t free_block(block.addr() + real_size);
         free_block.size() = block.size() - real_size;
         block.size() = real_size;
         block.next() = free_block.addr();
