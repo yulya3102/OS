@@ -85,6 +85,8 @@ namespace alloc
             }
             *prev = free_block.addr();
             free_block.next() = block.addr();
+            if (free_block.addr() + free_block.size() == block.addr())
+                free_block.size() += block.size();
             lock.unlock();
         }
     }
