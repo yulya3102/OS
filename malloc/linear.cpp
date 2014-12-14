@@ -77,16 +77,20 @@ namespace alloc
         {
             lock.lock();
             ptr_t * prev = &head;
+            block_t prev_block(nullptr);
             block_t block(head);
             while (block.addr() && block.addr() < free_block.addr())
             {
                 prev = &block.next();
+                prev_block = block;
                 block = block.next();
             }
             *prev = free_block.addr();
             free_block.next() = block.addr();
             if (free_block.addr() + free_block.size() == block.addr())
                 free_block.size() += block.size();
+            if (prev_block.addr() && prev_block.addr() + prev_block.size() == free_block.addr())
+                prev_block.size() += free_block.size();
             lock.unlock();
         }
     }
