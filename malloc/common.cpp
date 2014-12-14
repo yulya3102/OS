@@ -33,4 +33,9 @@ namespace alloc
 
         return reinterpret_cast<ptr_t>(addr);
     }
+
+    void free_pages(ptr_t addr, size_t pages)
+    {
+        munmap(addr, pages * PAGE_SIZE);
+    }
 }
