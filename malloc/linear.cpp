@@ -62,10 +62,26 @@ namespace alloc
                 size_t pages = bytes_to_pages(size);
                 block_t new_block(allocate_pages(pages));
                 new_block.size() = pages * PAGE_SIZE;
+
+                if (new_block.size() - size > sizeof(size_t) + sizeof(ptr_t))
+                {
+                    block_t new_free_block(new_block.addr() + size);
+                    new_free_block.size() = new_block.size() - size;
+                    new_block.size() = size;
+                    free_block(new_free_block);
+                }
+
                 return new_block;
             }
             else
             {
+                if (block.size() - size > sizeof(size_t) + sizeof(ptr_t))
+                {
+                    block_t new_free_block(block.addr() + size);
+                    new_free_block.size() = block.size() - size;
+                    block.size() = size;
+                    block.next() = new_free_block.addr();
+                }
                 *prev = block.next();
                 block.next() = nullptr;
                 lock.unlock();
