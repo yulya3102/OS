@@ -8,11 +8,6 @@ namespace alloc
 {
     const size_t PAGE_SIZE = 4096;
 
-    namespace linear
-    {
-        struct block_t;
-    }
-
     struct data_block_t
     {
         data_block_t(ptr_t addr);
