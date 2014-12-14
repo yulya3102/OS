@@ -59,7 +59,10 @@ namespace alloc
             if (!block.addr())
             {
                 lock.unlock();
-                return allocate_new_block(bytes_to_pages(size));
+                size_t pages = bytes_to_pages(size);
+                block_t new_block(allocate_pages(pages));
+                new_block.size() = pages * PAGE_SIZE;
+                return new_block;
             }
             else
             {

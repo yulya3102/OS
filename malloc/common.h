@@ -22,5 +22,5 @@ namespace alloc
     };
 
     size_t bytes_to_pages(size_t bytes);
-    linear::block_t allocate_new_block(size_t pages);
+    ptr_t allocate_pages(size_t pages);
 }

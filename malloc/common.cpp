@@ -21,7 +21,7 @@ namespace alloc
         return bytes / PAGE_SIZE;
     }
 
-    linear::block_t allocate_new_block(size_t pages)
+    ptr_t allocate_pages(size_t pages)
     {
         size_t size = pages * PAGE_SIZE;
         void * addr = mmap(nullptr, size,
@@ -31,8 +31,6 @@ namespace alloc
         if (addr == MAP_FAILED)
             return nullptr;
 
-        linear::block_t result(reinterpret_cast<ptr_t>(addr));
-        result.size() = size;
-        return result;
+        return reinterpret_cast<ptr_t>(addr);
     }
 }
