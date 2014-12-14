@@ -76,21 +76,24 @@ namespace alloc
         void linear_allocator_t::free_block(block_t free_block)
         {
             lock.lock();
-            ptr_t * prev = &head;
-            block_t prev_block(nullptr);
-            block_t block(head);
+            block_t prev(nullptr), block(head);
             while (block.addr() && block.addr() < free_block.addr())
             {
-                prev = &block.next();
-                prev_block = block;
+                prev = block;
                 block = block.next();
             }
-            *prev = free_block.addr();
+
+            if (prev.addr())
+                prev.next() = free_block.addr();
+            else
+                head = free_block.addr();
             free_block.next() = block.addr();
+
             if (free_block.addr() + free_block.size() == block.addr())
                 free_block.size() += block.size();
-            if (prev_block.addr() && prev_block.addr() + prev_block.size() == free_block.addr())
-                prev_block.size() += free_block.size();
+            if (prev.addr() && prev.addr() + prev.size() == free_block.addr())
+                prev.size() += free_block.size();
+
             lock.unlock();
         }
     }
