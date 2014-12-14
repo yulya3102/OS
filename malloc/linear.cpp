@@ -73,11 +73,18 @@ namespace alloc
             }
         }
 
-        void linear_allocator_t::free_block(block_t block)
+        void linear_allocator_t::free_block(block_t free_block)
         {
             lock.lock();
-            block.next() = head;
-            head = block.addr();
+            ptr_t * prev = &head;
+            block_t block(head);
+            while (block.addr() && block.addr() < free_block.addr())
+            {
+                prev = &block.next();
+                block = block.next();
+            }
+            *prev = free_block.addr();
+            free_block.next() = block.addr();
             lock.unlock();
         }
     }
