@@ -17,6 +17,11 @@ namespace alloc
             return data_block_t(addr_ + sizeof(size_t));
         }
 
+        size_t block_t::data_size() const
+        {
+            return size() - sizeof(size_t);
+        }
+
         size_t block_t::size() const
         {
             return *reinterpret_cast<size_t *>(addr_);

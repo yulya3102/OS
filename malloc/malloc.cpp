@@ -52,8 +52,13 @@ void * realloc(void * ptr, size_t size)
     if (!ptr)
         return malloc(size);
 
+    size_t copied_size;
+    {
+        linear::block_t block(data_block_t(reinterpret_cast<ptr_t>(ptr)));
+        copied_size = std::min(block.data_size(), size);
+    }
     void * new_ptr = malloc(size);
-    memcpy(new_ptr, ptr, size);
+    memcpy(new_ptr, ptr, copied_size);
     free(ptr);
     return new_ptr;
 }
