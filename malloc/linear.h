@@ -28,6 +28,7 @@ namespace alloc
             linear_allocator_t();
             block_t allocate_block(size_t size);
             void free_block(block_t block);
+            bool is_empty() const;
         private:
             std::mutex lock;
             ptr_t head;

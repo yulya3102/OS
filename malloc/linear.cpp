@@ -117,5 +117,10 @@ namespace alloc
 
             lock.unlock();
         }
+
+        bool linear_allocator_t::is_empty() const
+        {
+            return head == nullptr;
+        }
     }
 }
