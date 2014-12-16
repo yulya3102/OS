@@ -9,7 +9,11 @@ namespace
 {
     using namespace alloc;
 
-    linear::linear_allocator_t allocator;
+    linear::linear_allocator_t & get_allocator()
+    {
+        static linear::linear_allocator_t allocator;
+        return allocator;
+    }
 }
 
 extern "C"
@@ -19,7 +23,7 @@ void * malloc(size_t size)
         return NULL;
 
     size_t real_size = ((size > sizeof(ptr_t)) ? size : sizeof(ptr_t)) + sizeof(size_t);
-    linear::block_t block = allocator.allocate_block(real_size);
+    linear::block_t block = get_allocator().allocate_block(real_size);
     return block.to_data_block().addr();
 }
 
@@ -30,7 +34,7 @@ void free(void * ptr)
         return;
 
     data_block_t data_block(reinterpret_cast<ptr_t>(ptr));
-    allocator.free_block(linear::block_t(data_block));
+    get_allocator().free_block(linear::block_t(data_block));
 }
 
 extern "C"

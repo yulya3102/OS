@@ -48,14 +48,20 @@ namespace alloc
         }
 
         linear_allocator_t::linear_allocator_t()
-            : head(nullptr)
+            : addr_(allocate_pages(1))
+        {
+            init();
+        }
+
+        linear_allocator_t::linear_allocator_t(ptr_t addr)
+            : addr_(addr)
         {}
 
         block_t linear_allocator_t::allocate_block(size_t size)
         {
-            lock.lock();
-            ptr_t * prev = &head;
-            block_t block(head);
+            lock().lock();
+            ptr_t * prev = &head();
+            block_t block(head());
             while (block.addr() && block.size() < size)
             {
                 prev = &block.next();
@@ -63,7 +69,7 @@ namespace alloc
             }
             if (!block.addr())
             {
-                lock.unlock();
+                lock().unlock();
                 size_t pages = bytes_to_pages(size);
                 block_t new_block(allocate_pages(pages));
                 new_block.size() = pages * PAGE_SIZE;
@@ -89,15 +95,15 @@ namespace alloc
                 }
                 *prev = block.next();
                 block.next() = nullptr;
-                lock.unlock();
+                lock().unlock();
                 return block;
             }
         }
 
         void linear_allocator_t::free_block(block_t free_block)
         {
-            lock.lock();
-            block_t prev(nullptr), block(head);
+            lock().lock();
+            block_t prev(nullptr), block(head());
             while (block.addr() && block.addr() < free_block.addr())
             {
                 prev = block;
@@ -107,7 +113,7 @@ namespace alloc
             if (prev.addr())
                 prev.next() = free_block.addr();
             else
-                head = free_block.addr();
+                head() = free_block.addr();
             free_block.next() = block.addr();
 
             if (free_block.addr() + free_block.size() == block.addr())
@@ -115,12 +121,28 @@ namespace alloc
             if (prev.addr() && prev.addr() + prev.size() == free_block.addr())
                 prev.size() += free_block.size();
 
-            lock.unlock();
+            lock().unlock();
         }
 
-        bool linear_allocator_t::is_empty() const
+        bool linear_allocator_t::is_empty()
         {
-            return head == nullptr;
+            return head() == nullptr;
+        }
+
+        void linear_allocator_t::init()
+        {
+            new (&lock()) std::mutex();
+            head() = nullptr;
+        }
+
+        std::mutex & linear_allocator_t::lock()
+        {
+            return *reinterpret_cast<std::mutex *>(addr_);
+        }
+
+        ptr_t & linear_allocator_t::head()
+        {
+            return *reinterpret_cast<ptr_t *>(&lock() + 1);
         }
     }
 }
