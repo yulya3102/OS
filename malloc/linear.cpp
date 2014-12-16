@@ -133,6 +133,7 @@ namespace alloc
         {
             new (&lock()) std::mutex();
             head() = nullptr;
+            next_allocator() = nullptr;
         }
 
         std::mutex & linear_allocator_t::lock()
@@ -143,6 +144,11 @@ namespace alloc
         ptr_t & linear_allocator_t::head()
         {
             return *reinterpret_cast<ptr_t *>(&lock() + 1);
+        }
+
+        ptr_t & linear_allocator_t::next_allocator()
+        {
+            return *(&head() + 1);
         }
     }
 }

@@ -34,6 +34,7 @@ namespace alloc
             void init();
             std::mutex & lock();
             ptr_t & head();
+            ptr_t & next_allocator();
             ptr_t addr_;
         };
     }
