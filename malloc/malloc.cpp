@@ -1,5 +1,6 @@
 #include "common.h"
 #include "linear.h"
+#include "mmap.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -22,6 +23,9 @@ void * malloc(size_t size)
     if (!size)
         return NULL;
 
+    if (size > PAGE_SIZE - get_allocator().header_size())
+        return mmap::allocate_block(size).to_data_block().addr();
+
     size_t real_size = ((size > sizeof(ptr_t)) ? size : sizeof(ptr_t)) + sizeof(size_t);
     linear::block_t block = get_allocator().allocate_block(real_size);
     return block.to_data_block().addr();
@@ -34,7 +38,10 @@ void free(void * ptr)
         return;
 
     data_block_t data_block(reinterpret_cast<ptr_t>(ptr));
-    get_allocator().free_block(linear::block_t(data_block));
+    if ((reinterpret_cast<size_t>(mmap::block_t(data_block).addr()) % PAGE_SIZE) == 0)
+        mmap::free_block(data_block);
+    else
+        get_allocator().free_block(linear::block_t(data_block));
 }
 
 extern "C"
