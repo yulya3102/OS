@@ -40,7 +40,7 @@ namespace alloc
 
         block_t allocate_block(size_t size)
         {
-            size_t pages = bytes_to_pages(size);
+            size_t pages = bytes_to_pages(size + sizeof(size_t));
             block_t block(allocate_pages(pages));
             block.size() = pages * PAGE_SIZE;
             return block;
