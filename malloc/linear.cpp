@@ -1,5 +1,7 @@
 #include "linear.h"
 
+#include <cassert>
+
 namespace alloc
 {
     namespace linear
@@ -65,6 +67,8 @@ namespace alloc
 
         block_t linear_allocator_t::allocate_block(size_t size)
         {
+            assert(size <= block_size());
+            size = block_size();
             lock().lock();
             ptr_t * prev = &head();
             block_t block(head());
