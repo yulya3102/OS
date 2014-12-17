@@ -69,19 +69,12 @@ namespace alloc
             }
             if (!block.addr())
             {
-                lock().unlock();
-                size_t pages = bytes_to_pages(size);
-                block_t new_block(allocate_pages(pages));
-                new_block.size() = pages * PAGE_SIZE;
-
-                if (new_block.size() - size > sizeof(size_t) + sizeof(ptr_t))
+                if (!next_allocator())
                 {
-                    block_t new_free_block(new_block.addr() + size);
-                    new_free_block.size() = new_block.size() - size;
-                    new_block.size() = size;
-                    free_block(new_free_block);
+                    add_allocator();
                 }
-
+                block_t new_block = linear_allocator_t(next_allocator()).allocate_block(size);
+                lock().unlock();
                 return new_block;
             }
             else
@@ -139,6 +132,12 @@ namespace alloc
             block.next() = nullptr;
         }
 
+        void linear_allocator_t::add_allocator()
+        {
+            linear_allocator_t new_allocator;
+            next_allocator() = new_allocator.addr_;
+        }
+
         std::mutex & linear_allocator_t::lock()
         {
             return *reinterpret_cast<std::mutex *>(addr_);
@@ -154,7 +153,7 @@ namespace alloc
             return *(&head() + 1);
         }
 
-        size_t linear_allocator_t::header_size()
+        size_t linear_allocator_t::header_size() const
         {
             return sizeof(std::mutex) + 2 * sizeof(ptr_t);
         }
