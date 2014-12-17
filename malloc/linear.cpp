@@ -47,6 +47,12 @@ namespace alloc
             return *reinterpret_cast<ptr_t *>(addr_ + size() - sizeof(ptr_t));
         }
 
+        ptr_t block_t::bucket_address() const
+        {
+            size_t mask = ~(PAGE_SIZE - 1);
+            return reinterpret_cast<ptr_t>(reinterpret_cast<size_t>(addr_) & mask);
+        }
+
         linear_allocator_t::linear_allocator_t()
             : addr_(allocate_pages(1))
         {

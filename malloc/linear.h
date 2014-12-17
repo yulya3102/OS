@@ -19,6 +19,7 @@ namespace alloc
             ptr_t addr() const;
             ptr_t next() const;
             ptr_t & next();
+            ptr_t bucket_address() const;
         private:
             ptr_t addr_;
         };
