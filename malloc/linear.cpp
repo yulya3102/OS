@@ -150,5 +150,10 @@ namespace alloc
         {
             return *(&head() + 1);
         }
+
+        size_t linear_allocator_t::header_size()
+        {
+            return sizeof(std::mutex) + 2 * sizeof(ptr_t);
+        }
     }
 }

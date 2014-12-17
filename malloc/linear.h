@@ -35,6 +35,7 @@ namespace alloc
             std::mutex & lock();
             ptr_t & head();
             ptr_t & next_allocator();
+            size_t header_size();
             ptr_t addr_;
         };
     }
