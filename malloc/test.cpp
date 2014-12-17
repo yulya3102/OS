@@ -50,6 +50,26 @@ TEST(malloc, random)
     EXPECT_EQ(0, 0);
 }
 
+TEST(calloc, random)
+{
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator(seed);
+    auto sizes = std::bind(std::uniform_int_distribution<size_t>(0, 1000), generator);
+
+    size_t allocations = sizes();
+    for (size_t i = 0; i < allocations; ++i)
+    {
+        size_t size  = sizes();
+        size_t nmemb = sizes();
+        unsigned char * block = reinterpret_cast<unsigned char *>(calloc(nmemb, size));
+        for (size_t j = 0; j < nmemb; ++j)
+            for (size_t k = 0; k < size; ++k)
+                EXPECT_EQ(*(block + j * size + k), '\0');
+        memset(block, size, nmemb * size);
+        free(block);
+    }
+}
+
 int main(int argc, char ** argv)
 {
     testing::InitGoogleTest(&argc, argv);
