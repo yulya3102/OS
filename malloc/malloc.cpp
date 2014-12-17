@@ -23,7 +23,7 @@ void * malloc(size_t size)
     if (!size)
         return NULL;
 
-    if (size > PAGE_SIZE - get_allocator().header_size())
+    if (size > PAGE_SIZE / 2)
         return mmap::allocate_block(size).to_data_block().addr();
 
     size_t real_size = ((size > sizeof(ptr_t)) ? size : sizeof(ptr_t)) + sizeof(size_t);
