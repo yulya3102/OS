@@ -11,3 +11,13 @@ set(SOURCES
 )
 
 add_library(malloc SHARED ${SOURCES})
+
+find_package(GTest)
+
+set(TESTS
+    test.cpp
+)
+
+add_executable(test_malloc ${TESTS})
+
+target_link_libraries(test_malloc ${GTEST_LIBRARY})
