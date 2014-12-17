@@ -6,7 +6,7 @@
 
 namespace alloc
 {
-    namespace linear
+    namespace slab
     {
         struct block_t
         {
@@ -24,10 +24,10 @@ namespace alloc
             ptr_t addr_;
         };
 
-        struct linear_allocator_t
+        struct bucket_t
         {
-            linear_allocator_t(size_t block_size);
-            linear_allocator_t(ptr_t addr);
+            bucket_t(size_t block_size);
+            bucket_t(ptr_t addr);
             block_t allocate_block(size_t size);
             void free_block(block_t block);
             bool is_empty();

@@ -1,10 +1,10 @@
-#include "linear.h"
+#include "slab.h"
 
 #include <cassert>
 
 namespace alloc
 {
-    namespace linear
+    namespace slab
     {
         block_t::block_t(ptr_t addr)
             : addr_(addr)
@@ -55,17 +55,17 @@ namespace alloc
             return reinterpret_cast<ptr_t>(reinterpret_cast<size_t>(addr_) & mask);
         }
 
-        linear_allocator_t::linear_allocator_t(size_t block_size)
+        bucket_t::bucket_t(size_t block_size)
             : addr_(allocate_pages(1))
         {
             init(block_size);
         }
 
-        linear_allocator_t::linear_allocator_t(ptr_t addr)
+        bucket_t::bucket_t(ptr_t addr)
             : addr_(addr)
         {}
 
-        block_t linear_allocator_t::allocate_block(size_t size)
+        block_t bucket_t::allocate_block(size_t size)
         {
             assert(size <= block_size());
             size = block_size();
@@ -83,7 +83,7 @@ namespace alloc
                 {
                     add_allocator();
                 }
-                block_t new_block = linear_allocator_t(next_allocator()).allocate_block(size);
+                block_t new_block = bucket_t(next_allocator()).allocate_block(size);
                 lock().unlock();
                 return new_block;
             }
@@ -103,7 +103,7 @@ namespace alloc
             }
         }
 
-        void linear_allocator_t::free_block(block_t free_block)
+        void bucket_t::free_block(block_t free_block)
         {
             lock().lock();
             block_t prev(nullptr), block(head());
@@ -127,12 +127,12 @@ namespace alloc
             lock().unlock();
         }
 
-        bool linear_allocator_t::is_empty()
+        bool bucket_t::is_empty()
         {
             return head() == nullptr;
         }
 
-        void linear_allocator_t::init(size_t size)
+        void bucket_t::init(size_t size)
         {
             new (&lock()) std::mutex();
             next_allocator() = nullptr;
@@ -143,40 +143,40 @@ namespace alloc
             block.next() = nullptr;
         }
 
-        void linear_allocator_t::add_allocator()
+        void bucket_t::add_allocator()
         {
-            linear_allocator_t new_allocator(block_size());
+            bucket_t new_allocator(block_size());
             next_allocator() = new_allocator.addr_;
         }
 
-        std::mutex & linear_allocator_t::lock()
+        std::mutex & bucket_t::lock()
         {
             return *reinterpret_cast<std::mutex *>(addr_);
         }
 
-        ptr_t & linear_allocator_t::head()
+        ptr_t & bucket_t::head()
         {
             return *reinterpret_cast<ptr_t *>(&lock() + 1);
         }
 
-        ptr_t & linear_allocator_t::next_allocator()
+        ptr_t & bucket_t::next_allocator()
         {
             return *(&head() + 1);
         }
 
-        size_t & linear_allocator_t::block_size()
+        size_t & bucket_t::block_size()
         {
             return *reinterpret_cast<size_t *>(&next_allocator() + 1);
         }
 
-        size_t linear_allocator_t::header_size() const
+        size_t bucket_t::header_size() const
         {
             return sizeof(std::mutex) + 2 * sizeof(ptr_t);
         }
 
         void free_block(block_t block)
         {
-            linear_allocator_t allocator(block.bucket_address());
+            bucket_t allocator(block.bucket_address());
             allocator.free_block(block);
         }
     }

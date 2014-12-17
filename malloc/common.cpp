@@ -1,5 +1,4 @@
 #include "common.h"
-#include "linear.h"
 
 #include <sys/mman.h>
 

@@ -1,5 +1,5 @@
 #include "common.h"
-#include "linear.h"
+#include "slab.h"
 #include "mmap.h"
 
 #include <stddef.h>
@@ -10,9 +10,11 @@ namespace
 {
     using namespace alloc;
 
-    linear::linear_allocator_t & get_allocator()
+    const size_t SMALL_BLOCK_SIZE = PAGE_SIZE / 4;
+
+    slab::bucket_t & get_allocator()
     {
-        static linear::linear_allocator_t allocator(PAGE_SIZE / 2);
+        static slab::bucket_t allocator(SMALL_BLOCK_SIZE);
         return allocator;
     }
 }
@@ -23,11 +25,11 @@ void * malloc(size_t size)
     if (!size)
         return NULL;
 
-    if (size > PAGE_SIZE / 2)
+    if (size > SMALL_BLOCK_SIZE)
         return mmap::allocate_block(size).to_data_block().addr();
 
     size_t real_size = ((size > sizeof(ptr_t)) ? size : sizeof(ptr_t)) + sizeof(size_t);
-    linear::block_t block = get_allocator().allocate_block(real_size);
+    slab::block_t block = get_allocator().allocate_block(real_size);
     return block.to_data_block().addr();
 }
 
@@ -41,7 +43,7 @@ void free(void * ptr)
     if ((reinterpret_cast<size_t>(mmap::block_t(data_block).addr()) % PAGE_SIZE) == 0)
         mmap::free_block(data_block);
     else
-        linear::free_block(linear::block_t(data_block));
+        slab::free_block(slab::block_t(data_block));
 }
 
 extern "C"
@@ -65,7 +67,7 @@ void * realloc(void * ptr, size_t size)
 
     size_t copied_size;
     {
-        linear::block_t block(data_block_t(reinterpret_cast<ptr_t>(ptr)));
+        slab::block_t block(data_block_t(reinterpret_cast<ptr_t>(ptr)));
         copied_size = std::min(block.data_size(), size);
     }
     void * new_ptr = malloc(size);
