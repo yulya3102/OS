@@ -163,5 +163,11 @@ namespace alloc
         {
             return sizeof(std::mutex) + 2 * sizeof(ptr_t);
         }
+
+        void free_block(block_t block)
+        {
+            linear_allocator_t allocator(block.bucket_address());
+            allocator.free_block(block);
+        }
     }
 }

@@ -40,5 +40,7 @@ namespace alloc
             ptr_t & next_allocator();
             ptr_t addr_;
         };
+
+        void free_block(block_t block);
     }
 }
