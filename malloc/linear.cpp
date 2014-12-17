@@ -132,8 +132,11 @@ namespace alloc
         void linear_allocator_t::init()
         {
             new (&lock()) std::mutex();
-            head() = nullptr;
             next_allocator() = nullptr;
+            head() = addr_ + header_size();
+            block_t block(head());
+            block.size() = PAGE_SIZE - header_size();
+            block.next() = nullptr;
         }
 
         std::mutex & linear_allocator_t::lock()
