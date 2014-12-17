@@ -26,18 +26,19 @@ namespace alloc
 
         struct linear_allocator_t
         {
-            linear_allocator_t();
+            linear_allocator_t(size_t block_size);
             linear_allocator_t(ptr_t addr);
             block_t allocate_block(size_t size);
             void free_block(block_t block);
             bool is_empty();
             size_t header_size() const;
         private:
-            void init();
+            void init(size_t size);
             void add_allocator();
             std::mutex & lock();
             ptr_t & head();
             ptr_t & next_allocator();
+            size_t & block_size();
             ptr_t addr_;
         };
 

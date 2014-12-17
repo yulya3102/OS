@@ -12,7 +12,7 @@ namespace
 
     linear::linear_allocator_t & get_allocator()
     {
-        static linear::linear_allocator_t allocator;
+        static linear::linear_allocator_t allocator(PAGE_SIZE / 2);
         return allocator;
     }
 }

@@ -53,10 +53,10 @@ namespace alloc
             return reinterpret_cast<ptr_t>(reinterpret_cast<size_t>(addr_) & mask);
         }
 
-        linear_allocator_t::linear_allocator_t()
+        linear_allocator_t::linear_allocator_t(size_t block_size)
             : addr_(allocate_pages(1))
         {
-            init();
+            init(block_size);
         }
 
         linear_allocator_t::linear_allocator_t(ptr_t addr)
@@ -128,11 +128,12 @@ namespace alloc
             return head() == nullptr;
         }
 
-        void linear_allocator_t::init()
+        void linear_allocator_t::init(size_t size)
         {
             new (&lock()) std::mutex();
             next_allocator() = nullptr;
             head() = addr_ + header_size();
+            block_size() = size;
             block_t block(head());
             block.size() = PAGE_SIZE - header_size();
             block.next() = nullptr;
@@ -140,7 +141,7 @@ namespace alloc
 
         void linear_allocator_t::add_allocator()
         {
-            linear_allocator_t new_allocator;
+            linear_allocator_t new_allocator(block_size());
             next_allocator() = new_allocator.addr_;
         }
 
@@ -157,6 +158,11 @@ namespace alloc
         ptr_t & linear_allocator_t::next_allocator()
         {
             return *(&head() + 1);
+        }
+
+        size_t & linear_allocator_t::block_size()
+        {
+            return *reinterpret_cast<size_t *>(&next_allocator() + 1);
         }
 
         size_t linear_allocator_t::header_size() const
