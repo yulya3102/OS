@@ -147,7 +147,7 @@ namespace alloc
 
         size_t bucket_t::header_size() const
         {
-            return sizeof(std::mutex) + 2 * sizeof(ptr_t);
+            return sizeof(std::mutex) + 2 * sizeof(ptr_t) + sizeof(size_t);
         }
 
         void free_block(block_t block)
