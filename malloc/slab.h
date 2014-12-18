@@ -32,6 +32,7 @@ namespace alloc
             bool is_empty();
             size_t header_size() const;
             size_t & block_size();
+            ptr_t & bigger_bucket();
         private:
             void init(size_t size);
             void add_allocator();

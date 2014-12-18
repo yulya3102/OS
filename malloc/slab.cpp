@@ -103,6 +103,7 @@ namespace alloc
             next_allocator() = nullptr;
             head() = addr_ + header_size();
             block_size() = size;
+            bigger_bucket() = nullptr;
             block_t block(head());
             size_t unsplitted_size = PAGE_SIZE - header_size();
             while (true)
@@ -145,9 +146,14 @@ namespace alloc
             return *reinterpret_cast<size_t *>(&next_allocator() + 1);
         }
 
+        ptr_t & bucket_t::bigger_bucket()
+        {
+            return *reinterpret_cast<ptr_t *>(&block_size() + 1);
+        }
+
         size_t bucket_t::header_size() const
         {
-            return sizeof(std::mutex) + 2 * sizeof(ptr_t) + sizeof(size_t);
+            return sizeof(std::mutex) + 2 * sizeof(ptr_t) + sizeof(size_t) + sizeof(ptr_t);
         }
 
         void free_block(block_t block)
