@@ -160,12 +160,6 @@ namespace alloc
             return sizeof(std::mutex) + 2 * sizeof(ptr_t) + sizeof(size_t) + sizeof(ptr_t);
         }
 
-        void free_block(block_t block)
-        {
-            bucket_t allocator(block.bucket_address());
-            allocator.free_block(block);
-        }
-
         slab_t::slab_t(size_t step, size_t max_size)
             : smallest(sizeof(ptr_t))
         {
@@ -185,7 +179,8 @@ namespace alloc
 
         void slab_t::free_block(block_t block)
         {
-            free_block(block);
+            bucket_t allocator(block.bucket_address());
+            allocator.free_block(block);
         }
     }
 }

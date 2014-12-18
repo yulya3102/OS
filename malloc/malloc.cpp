@@ -42,7 +42,7 @@ void free(void * ptr)
     if ((reinterpret_cast<size_t>(mmap::block_t(data_block).addr()) % PAGE_SIZE) == 0)
         mmap::free_block(data_block);
     else
-        slab::free_block(slab::block_t(data_block));
+        get_allocator().free_block(slab::block_t(data_block));
 }
 
 extern "C"

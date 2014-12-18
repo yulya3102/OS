@@ -44,8 +44,6 @@ namespace alloc
             friend struct slab_t;
         };
 
-        void free_block(block_t block);
-
         struct slab_t
         {
             slab_t(size_t step, size_t max_size);
