@@ -123,6 +123,14 @@ namespace alloc
             block_size() = size;
             block_t block(head());
             block.size() = PAGE_SIZE - header_size();
+            while (block.size() >= block_size())
+            {
+                block_t next_block(block.addr() + block_size());
+                next_block.size() = block.size() - block_size();
+                block.size() = block_size();
+                block.next() = next_block.addr();
+                block = next_block;
+            }
             block.next() = nullptr;
         }
 
