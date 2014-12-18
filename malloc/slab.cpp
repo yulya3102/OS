@@ -106,8 +106,8 @@ namespace alloc
         {
             new (&lock()) std::mutex();
             next_allocator() = nullptr;
-            head() = addr_ + header_size();
             block_size() = size;
+            head() = addr_ + header_size();
             bigger_bucket() = nullptr;
             block_t block(head());
             size_t unsplitted_size = PAGE_SIZE - header_size();
@@ -158,8 +158,15 @@ namespace alloc
 
         size_t bucket_t::header_size()
         {
-            size_t size = sizeof(std::mutex) + 2 * sizeof(ptr_t) + sizeof(size_t) + sizeof(ptr_t);
-            return (size % block_size() == 0) ? size : ((size / block_size() + 1) * block_size());
+            ptr_t not_aligned_head = sizeof(std::mutex) + 2 * sizeof(ptr_t) + sizeof(size_t) + sizeof(ptr_t) + addr_;
+            ptr_t aligned_head;
+            if (reinterpret_cast<size_t>(not_aligned_head) % block_size() == 0)
+                aligned_head = not_aligned_head;
+            else
+                aligned_head = reinterpret_cast<ptr_t>(
+                    (reinterpret_cast<size_t>(not_aligned_head) / block_size() + 1)
+                    * block_size());
+            return aligned_head - addr_;
         }
 
         slab_t::slab_t(size_t step, size_t big_size)

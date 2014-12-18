@@ -30,7 +30,6 @@ namespace alloc
             block_t allocate_block(size_t size);
             void free_block(block_t block);
             bool is_empty();
-            size_t header_size();
             size_t & block_size();
         private:
             void init(size_t size);
@@ -39,6 +38,7 @@ namespace alloc
             ptr_t & head();
             ptr_t & next_allocator();
             ptr_t & bigger_bucket();
+            size_t header_size();
             ptr_t addr_;
 
             friend struct slab_t;
