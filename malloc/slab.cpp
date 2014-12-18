@@ -70,14 +70,7 @@ namespace alloc
             assert(size <= block_size());
             size = block_size();
             lock().lock();
-            ptr_t * prev = &head();
-            block_t block(head());
-            while (block.addr() && block.size() < size)
-            {
-                prev = &block.next();
-                block = block.next();
-            }
-            if (!block.addr())
+            if (is_empty())
             {
                 if (!next_allocator())
                 {
@@ -89,7 +82,8 @@ namespace alloc
             }
             else
             {
-                *prev = block.next();
+                block_t block(head());
+                head() = block.next();
                 block.next() = nullptr;
                 lock().unlock();
                 return block;
