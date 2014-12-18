@@ -12,9 +12,9 @@ namespace
 
     const size_t SMALL_BLOCK_SIZE = PAGE_SIZE / 4;
 
-    slab::bucket_t & get_allocator()
+    slab::slab_t & get_allocator()
     {
-        static slab::bucket_t allocator(SMALL_BLOCK_SIZE);
+        static slab::slab_t allocator(sizeof(ptr_t), SMALL_BLOCK_SIZE);
         return allocator;
     }
 }

@@ -165,5 +165,27 @@ namespace alloc
             bucket_t allocator(block.bucket_address());
             allocator.free_block(block);
         }
+
+        slab_t::slab_t(size_t step, size_t max_size)
+            : smallest(sizeof(ptr_t))
+        {
+            bucket_t bucket = smallest;
+            while (bucket.block_size() + step <= max_size)
+            {
+                bucket_t bigger_bucket = bucket_t(bucket.block_size() + step);
+                bucket.bigger_bucket() = bigger_bucket.addr_;
+                bucket = bigger_bucket;
+            }
+        }
+
+        block_t slab_t::allocate_block(size_t size)
+        {
+            return smallest.allocate_block(size);
+        }
+
+        void slab_t::free_block(block_t block)
+        {
+            free_block(block);
+        }
     }
 }
