@@ -28,8 +28,7 @@ void * malloc(size_t size)
     if (size > SMALL_BLOCK_SIZE)
         return mmap::allocate_block(size).to_data_block().addr();
 
-    size_t real_size = ((size > sizeof(ptr_t)) ? size : sizeof(ptr_t)) + sizeof(size_t);
-    slab::block_t block = get_allocator().allocate_block(real_size);
+    slab::block_t block = get_allocator().allocate_block(size);
     return block.to_data_block().addr();
 }
 
