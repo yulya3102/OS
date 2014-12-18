@@ -70,6 +70,31 @@ TEST(calloc, random)
     }
 }
 
+TEST(realloc, random)
+{
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator(seed);
+    auto sizes = std::bind(std::uniform_int_distribution<size_t>(0, 1000), generator);
+
+    size_t allocations = sizes();
+    for (size_t i = 0; i < allocations; ++i)
+    {
+        size_t size  = sizes();
+        void * block = malloc(size);
+        void * block_copy = malloc(size);
+        memset(block, size, size);
+        memcpy(block_copy, block, size);
+        size_t new_size = sizes();
+        block = realloc(block, new_size);
+        size_t copied_size = std::min(size, new_size);
+        for (size_t j = 0; j < copied_size; ++j)
+            EXPECT_EQ(*(reinterpret_cast<unsigned char *>(block) + j),
+                      *(reinterpret_cast<unsigned char *>(block_copy) + j));
+        free(block);
+        free(block_copy);
+    }
+}
+
 int main(int argc, char ** argv)
 {
     testing::InitGoogleTest(&argc, argv);
