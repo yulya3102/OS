@@ -98,7 +98,7 @@ namespace alloc
 
         bool bucket_t::is_empty()
         {
-            return head() == nullptr || block_t(head()).size() < block_size();
+            return head() == nullptr;
         }
 
         void bucket_t::init(size_t size)
