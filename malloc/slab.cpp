@@ -1,4 +1,5 @@
 #include "slab.h"
+#include "mmap.h"
 
 #include <cassert>
 
@@ -160,11 +161,12 @@ namespace alloc
             return sizeof(std::mutex) + 2 * sizeof(ptr_t) + sizeof(size_t) + sizeof(ptr_t);
         }
 
-        slab_t::slab_t(size_t step, size_t max_size)
+        slab_t::slab_t(size_t step, size_t big_size)
             : smallest(sizeof(ptr_t))
+            , big_size(big_size)
         {
             bucket_t bucket = smallest;
-            while (bucket.block_size() + step <= max_size)
+            while (bucket.block_size() + step <= big_size)
             {
                 bucket_t bigger_bucket = bucket_t(bucket.block_size() + step);
                 bucket.bigger_bucket() = bigger_bucket.addr_;
@@ -172,15 +174,24 @@ namespace alloc
             }
         }
 
-        block_t slab_t::allocate_block(size_t size)
+        data_block_t slab_t::allocate_block(size_t size)
         {
-            return smallest.allocate_block(size);
+            if (size > big_size)
+                return mmap::allocate_block(size).to_data_block();
+
+            return smallest.allocate_block(size).to_data_block();
         }
 
-        void slab_t::free_block(block_t block)
+        void slab_t::free_block(data_block_t block)
         {
-            bucket_t allocator(block.bucket_address());
-            allocator.free_block(block);
+            if ((reinterpret_cast<size_t>(mmap::block_t(block).addr()) % PAGE_SIZE) == 0)
+                mmap::free_block(block);
+            else
+            {
+                block_t slab_block(block);
+                bucket_t allocator(slab_block.bucket_address());
+                allocator.free_block(slab_block);
+            }
         }
     }
 }

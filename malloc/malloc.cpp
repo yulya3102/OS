@@ -25,11 +25,7 @@ void * malloc(size_t size)
     if (!size)
         return NULL;
 
-    if (size > SMALL_BLOCK_SIZE)
-        return mmap::allocate_block(size).to_data_block().addr();
-
-    slab::block_t block = get_allocator().allocate_block(size);
-    return block.to_data_block().addr();
+    return get_allocator().allocate_block(size).addr();
 }
 
 extern "C"
@@ -39,10 +35,7 @@ void free(void * ptr)
         return;
 
     data_block_t data_block(reinterpret_cast<ptr_t>(ptr));
-    if ((reinterpret_cast<size_t>(mmap::block_t(data_block).addr()) % PAGE_SIZE) == 0)
-        mmap::free_block(data_block);
-    else
-        get_allocator().free_block(slab::block_t(data_block));
+    get_allocator().free_block(data_block);
 }
 
 extern "C"
