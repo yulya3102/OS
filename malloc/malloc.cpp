@@ -57,11 +57,8 @@ void * realloc(void * ptr, size_t size)
     if (!ptr)
         return malloc(size);
 
-    size_t copied_size;
-    {
-        slab::block_t block(data_block_t(reinterpret_cast<ptr_t>(ptr)));
-        copied_size = std::min(block.data_size(), size);
-    }
+    data_block_t block(reinterpret_cast<ptr_t>(ptr));
+    size_t copied_size = std::min(size, get_allocator().block_size(block));
     void * new_ptr = malloc(size);
     memcpy(new_ptr, ptr, copied_size);
     free(ptr);

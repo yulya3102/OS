@@ -49,7 +49,9 @@ namespace alloc
             slab_t(size_t step, size_t big_size);
             data_block_t allocate_block(size_t size);
             void free_block(data_block_t block);
+            size_t block_size(const data_block_t & block) const;
         private:
+            bool is_mmap_block(const data_block_t & block) const;
             bucket_t smallest;
             size_t big_size;
         };

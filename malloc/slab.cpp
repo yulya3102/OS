@@ -184,7 +184,7 @@ namespace alloc
 
         void slab_t::free_block(data_block_t block)
         {
-            if ((reinterpret_cast<size_t>(mmap::block_t(block).addr()) % PAGE_SIZE) == 0)
+            if (is_mmap_block(block))
                 mmap::free_block(block);
             else
             {
@@ -192,6 +192,18 @@ namespace alloc
                 bucket_t allocator(slab_block.bucket_address());
                 allocator.free_block(slab_block);
             }
+        }
+
+        size_t slab_t::block_size(const data_block_t & block) const
+        {
+            if (is_mmap_block(block))
+                return mmap::block_t(block).data_size();
+            return block_t(block).data_size();
+        }
+
+        bool slab_t::is_mmap_block(const data_block_t & block) const
+        {
+            return (reinterpret_cast<size_t>(mmap::block_t(block).addr()) % PAGE_SIZE) == 0;
         }
     }
 }
