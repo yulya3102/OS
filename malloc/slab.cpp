@@ -156,9 +156,10 @@ namespace alloc
             return *reinterpret_cast<ptr_t *>(&block_size() + 1);
         }
 
-        size_t bucket_t::header_size() const
+        size_t bucket_t::header_size()
         {
-            return sizeof(std::mutex) + 2 * sizeof(ptr_t) + sizeof(size_t) + sizeof(ptr_t);
+            size_t size = sizeof(std::mutex) + 2 * sizeof(ptr_t) + sizeof(size_t) + sizeof(ptr_t);
+            return (size % block_size() == 0) ? size : ((size / block_size() + 1) * block_size());
         }
 
         slab_t::slab_t(size_t step, size_t big_size)

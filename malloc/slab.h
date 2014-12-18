@@ -30,7 +30,7 @@ namespace alloc
             block_t allocate_block(size_t size);
             void free_block(block_t block);
             bool is_empty();
-            size_t header_size() const;
+            size_t header_size();
             size_t & block_size();
         private:
             void init(size_t size);
