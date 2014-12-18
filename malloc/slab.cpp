@@ -62,7 +62,11 @@ namespace alloc
 
         block_t bucket_t::allocate_block(size_t size)
         {
-            assert(size <= block_size());
+            if (size > block_size())
+            {
+                assert(bigger_bucket());
+                return bucket_t(bigger_bucket()).allocate_block(size);
+            }
             lock().lock();
             if (is_empty())
             {
