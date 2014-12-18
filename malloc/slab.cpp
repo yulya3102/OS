@@ -26,12 +26,7 @@ namespace alloc
 
         size_t block_t::size() const
         {
-            return *reinterpret_cast<size_t *>(addr_);
-        }
-
-        size_t & block_t::size()
-        {
-            return *reinterpret_cast<size_t *>(addr_);
+            return bucket_t(bucket_address()).block_size();
         }
 
         ptr_t block_t::addr() const
@@ -109,16 +104,19 @@ namespace alloc
             head() = addr_ + header_size();
             block_size() = size;
             block_t block(head());
-            block.size() = PAGE_SIZE - header_size();
-            while (block.size() >= block_size())
+            size_t unsplitted_size = PAGE_SIZE - header_size();
+            while (true)
             {
                 block_t next_block(block.addr() + block_size());
-                next_block.size() = block.size() - block_size();
-                block.size() = block_size();
+                unsplitted_size -= block_size();
+                if (unsplitted_size < block_size())
+                {
+                    block.next() = nullptr;
+                    break;
+                }
                 block.next() = next_block.addr();
                 block = next_block;
             }
-            block.next() = nullptr;
         }
 
         void bucket_t::add_allocator()

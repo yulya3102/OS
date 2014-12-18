@@ -15,7 +15,6 @@ namespace alloc
             data_block_t to_data_block() const;
             size_t data_size() const;
             size_t size() const;
-            size_t & size();
             ptr_t addr() const;
             ptr_t next() const;
             ptr_t & next();
@@ -32,13 +31,13 @@ namespace alloc
             void free_block(block_t block);
             bool is_empty();
             size_t header_size() const;
+            size_t & block_size();
         private:
             void init(size_t size);
             void add_allocator();
             std::mutex & lock();
             ptr_t & head();
             ptr_t & next_allocator();
-            size_t & block_size();
             ptr_t addr_;
         };
 
