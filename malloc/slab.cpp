@@ -11,17 +11,17 @@ namespace alloc
         {}
 
         block_t::block_t(const data_block_t & data_block)
-            : addr_(data_block.addr() - sizeof(size_t))
+            : addr_(data_block.addr())
         {}
 
         data_block_t block_t::to_data_block() const
         {
-            return data_block_t(addr_ + sizeof(size_t));
+            return data_block_t(addr_);
         }
 
         size_t block_t::data_size() const
         {
-            return size() - sizeof(size_t);
+            return size();
         }
 
         size_t block_t::size() const
