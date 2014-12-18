@@ -1,6 +1,4 @@
-#include "common.h"
-#include "slab.h"
-#include "mmap.h"
+#include "hoard.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -12,9 +10,9 @@ namespace
 
     const size_t SMALL_BLOCK_SIZE = PAGE_SIZE / 4;
 
-    slab::slab_t & get_allocator()
+    hoard::hoard_t & get_allocator()
     {
-        static slab::slab_t allocator(sizeof(ptr_t), SMALL_BLOCK_SIZE);
+        static hoard::hoard_t allocator(sizeof(ptr_t), SMALL_BLOCK_SIZE);
         return allocator;
     }
 }
