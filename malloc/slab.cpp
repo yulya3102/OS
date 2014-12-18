@@ -89,13 +89,6 @@ namespace alloc
             }
             else
             {
-                if (block.size() - size > sizeof(size_t) + sizeof(ptr_t))
-                {
-                    block_t new_free_block(block.addr() + size);
-                    new_free_block.size() = block.size() - size;
-                    block.size() = size;
-                    block.next() = new_free_block.addr();
-                }
                 *prev = block.next();
                 block.next() = nullptr;
                 lock().unlock();
