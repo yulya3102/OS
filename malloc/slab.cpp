@@ -89,6 +89,7 @@ namespace alloc
         {
             lock().lock();
             free_block.next() = head();
+            head() = free_block.addr();
             lock().unlock();
         }
 
