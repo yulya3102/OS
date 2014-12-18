@@ -63,7 +63,6 @@ namespace alloc
         block_t bucket_t::allocate_block(size_t size)
         {
             assert(size <= block_size());
-            size = block_size();
             lock().lock();
             if (is_empty())
             {
@@ -71,7 +70,7 @@ namespace alloc
                 {
                     add_allocator();
                 }
-                block_t new_block = bucket_t(next_allocator()).allocate_block(size);
+                block_t new_block = bucket_t(next_allocator()).allocate_block(block_size());
                 lock().unlock();
                 return new_block;
             }
