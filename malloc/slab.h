@@ -3,6 +3,7 @@
 #include "common.h"
 
 #include <mutex>
+#include <thread>
 
 namespace alloc
 {
@@ -25,19 +26,20 @@ namespace alloc
 
         struct bucket_t
         {
-            bucket_t(size_t block_size);
+            bucket_t(size_t block_size, std::thread::id id);
             bucket_t(ptr_t addr);
             block_t allocate_block(size_t size);
             void free_block(block_t block);
             bool is_empty();
             size_t & block_size();
         private:
-            void init(size_t size);
+            void init(size_t size, std::thread::id id);
             void add_allocator();
             std::mutex & lock();
             ptr_t & head();
             ptr_t & next_allocator();
             ptr_t & bigger_bucket();
+            std::thread::id & id();
             size_t header_size();
             ptr_t addr_;
 
@@ -54,6 +56,7 @@ namespace alloc
             bool is_mmap_block(const data_block_t & block) const;
             bucket_t smallest;
             size_t big_size;
+            std::thread::id id;
         };
     }
 }

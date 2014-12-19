@@ -51,10 +51,10 @@ namespace alloc
             return reinterpret_cast<ptr_t>(reinterpret_cast<size_t>(addr_) & mask);
         }
 
-        bucket_t::bucket_t(size_t block_size)
+        bucket_t::bucket_t(size_t block_size, std::thread::id id)
             : addr_(allocate_pages(1))
         {
-            init(block_size);
+            init(block_size, id);
         }
 
         bucket_t::bucket_t(ptr_t addr)
@@ -102,13 +102,14 @@ namespace alloc
             return head() == nullptr;
         }
 
-        void bucket_t::init(size_t size)
+        void bucket_t::init(size_t size, std::thread::id thread_id)
         {
             new (&lock()) std::mutex();
             next_allocator() = nullptr;
             block_size() = size;
             head() = addr_ + header_size();
             bigger_bucket() = nullptr;
+            id() = thread_id;
             block_t block(head());
             size_t unsplitted_size = PAGE_SIZE - header_size();
             while (true)
@@ -127,7 +128,7 @@ namespace alloc
 
         void bucket_t::add_allocator()
         {
-            bucket_t new_allocator(block_size());
+            bucket_t new_allocator(block_size(), id());
             next_allocator() = new_allocator.addr_;
         }
 
@@ -156,9 +157,14 @@ namespace alloc
             return *reinterpret_cast<ptr_t *>(&block_size() + 1);
         }
 
+        std::thread::id & bucket_t::id()
+        {
+            return *reinterpret_cast<std::thread::id *>(&bigger_bucket() + 1);
+        }
+
         size_t bucket_t::header_size()
         {
-            ptr_t not_aligned_head = sizeof(std::mutex) + 2 * sizeof(ptr_t) + sizeof(size_t) + sizeof(ptr_t) + addr_;
+            ptr_t not_aligned_head = sizeof(std::mutex) + 2 * sizeof(ptr_t) + sizeof(size_t) + sizeof(ptr_t) + sizeof(std::thread::id) + addr_;
             ptr_t aligned_head;
             if (reinterpret_cast<size_t>(not_aligned_head) % block_size() == 0)
                 aligned_head = not_aligned_head;
@@ -170,13 +176,14 @@ namespace alloc
         }
 
         slab_t::slab_t(size_t step, size_t big_size)
-            : smallest(sizeof(ptr_t))
+            : smallest(sizeof(ptr_t), std::this_thread::get_id())
             , big_size(big_size)
+            , id(std::this_thread::get_id())
         {
             bucket_t bucket = smallest;
             while (bucket.block_size() + step <= big_size)
             {
-                bucket_t bigger_bucket = bucket_t(bucket.block_size() + step);
+                bucket_t bigger_bucket = bucket_t(bucket.block_size() + step, id);
                 bucket.bigger_bucket() = bigger_bucket.addr_;
                 bucket = bigger_bucket;
             }
