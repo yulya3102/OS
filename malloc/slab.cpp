@@ -224,6 +224,14 @@ namespace alloc
                         hoard->save_slab_blocks(saved_blocks);
                         saved_blocks = nullptr;
                         saved_blocks_length = 0;
+
+                        ptr_t free_blocks = hoard->get_saved_slab_blocks(id);
+                        while (free_blocks)
+                        {
+                            data_block_t block(free_blocks);
+                            free_blocks = *reinterpret_cast<ptr_t *>(free_blocks);
+                            free_block(block);
+                        }
                     }
                 }
             }

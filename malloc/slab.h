@@ -47,6 +47,7 @@ namespace alloc
             ptr_t addr_;
 
             friend struct slab_t;
+            friend struct hoard::hoard_t;
         };
 
         struct slab_t

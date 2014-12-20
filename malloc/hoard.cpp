@@ -42,5 +42,26 @@ namespace alloc
                 blocks = next;
             }
         }
+
+        ptr_t hoard_t::get_saved_slab_blocks(std::thread::id id)
+        {
+            lock.lock();
+            ptr_t result = nullptr;
+            ptr_t blocks = saved_blocks;
+            ptr_t * prev = &saved_blocks;
+            while (blocks)
+            {
+                if (slab::block_t(blocks).bucket().id() == id)
+                {
+                    *prev = *reinterpret_cast<ptr_t *>(blocks);
+                    *reinterpret_cast<ptr_t *>(blocks) = result;
+                    result = blocks;
+                }
+                prev = reinterpret_cast<ptr_t *>(blocks);
+                blocks = *reinterpret_cast<ptr_t *>(blocks);
+            }
+            lock.unlock();
+            return result;
+        }
     }
 }
