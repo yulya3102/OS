@@ -19,14 +19,14 @@ namespace alloc
             return get_thread_slab().free_block(block);
         }
 
-        size_t hoard_t::block_size(const data_block_t & block) const
+        size_t hoard_t::block_size(const data_block_t & block)
         {
             return get_thread_slab().block_size(block);
         }
 
-        slab::slab_t & hoard_t::get_thread_slab() const
+        slab::slab_t & hoard_t::get_thread_slab()
         {
-            thread_local static slab::slab_t slab(step, big_size);
+            thread_local static slab::slab_t slab(step, big_size, this);
             return slab;
         }
     }

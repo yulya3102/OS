@@ -175,12 +175,13 @@ namespace alloc
             return aligned_head - addr_;
         }
 
-        slab_t::slab_t(size_t step, size_t big_size)
+        slab_t::slab_t(size_t step, size_t big_size, hoard::hoard_ptr hoard)
             : smallest(sizeof(ptr_t), std::this_thread::get_id())
             , big_size(big_size)
             , id(std::this_thread::get_id())
             , saved_blocks(nullptr)
             , saved_blocks_length(0)
+            , hoard(hoard)
         {
             bucket_t bucket = smallest;
             while (bucket.block_size() + step <= big_size)

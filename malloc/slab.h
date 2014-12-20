@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.h"
+#include "hoard_fwd.h"
 
 #include <mutex>
 #include <thread>
@@ -48,7 +49,7 @@ namespace alloc
 
         struct slab_t
         {
-            slab_t(size_t step, size_t big_size);
+            slab_t(size_t step, size_t big_size, hoard::hoard_ptr hoard);
             data_block_t allocate_block(size_t size);
             void free_block(data_block_t block);
             size_t block_size(const data_block_t & block) const;
@@ -59,6 +60,7 @@ namespace alloc
             std::thread::id id;
             ptr_t saved_blocks;
             size_t saved_blocks_length;
+            hoard::hoard_ptr hoard;
         };
     }
 }

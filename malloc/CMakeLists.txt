@@ -6,6 +6,7 @@ set(CMAKE_CXX_FLAGS "-std=c++11 -Wall ${CMAKE_CXX_FLAGS}")
 set(SOURCES
     mmap.h   mmap.cpp
     slab.h   slab.cpp
+    hoard_fwd.h
     hoard.h  hoard.cpp
     common.h common.cpp
     malloc.cpp
