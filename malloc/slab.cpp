@@ -1,5 +1,6 @@
 #include "slab.h"
 #include "mmap.h"
+#include "hoard.h"
 
 #include <cassert>
 
@@ -7,6 +8,8 @@ namespace alloc
 {
     namespace slab
     {
+        const size_t MAX_SAVED_SLAB_BLOCKS = 20;
+
         block_t::block_t(ptr_t addr)
             : addr_(addr)
         {}
@@ -215,6 +218,12 @@ namespace alloc
                     *reinterpret_cast<ptr_t *>(block.addr()) = saved_blocks;
                     saved_blocks = block.addr();
                     saved_blocks_length++;
+                    if (saved_blocks_length > MAX_SAVED_SLAB_BLOCKS)
+                    {
+                        hoard->save_slab_blocks(saved_blocks);
+                        saved_blocks = nullptr;
+                        saved_blocks_length = 0;
+                    }
                 }
             }
         }

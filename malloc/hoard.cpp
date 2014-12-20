@@ -29,5 +29,18 @@ namespace alloc
             thread_local static slab::slab_t slab(step, big_size, this);
             return slab;
         }
+
+        void hoard_t::save_slab_blocks(ptr_t blocks)
+        {
+            while (blocks)
+            {
+                ptr_t next = *reinterpret_cast<ptr_t *>(blocks);
+                lock.lock();
+                *reinterpret_cast<ptr_t *>(blocks) = saved_blocks;
+                saved_blocks = blocks;
+                lock.unlock();
+                blocks = next;
+            }
+        }
     }
 }
