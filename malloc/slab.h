@@ -10,6 +10,8 @@ namespace alloc
 {
     namespace slab
     {
+        struct bucket_t;
+
         struct block_t
         {
             block_t(ptr_t addr);
@@ -20,7 +22,7 @@ namespace alloc
             ptr_t addr() const;
             ptr_t next() const;
             ptr_t & next();
-            ptr_t bucket_address() const;
+            bucket_t bucket() const;
         private:
             ptr_t addr_;
         };

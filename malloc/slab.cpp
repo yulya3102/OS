@@ -30,7 +30,7 @@ namespace alloc
 
         size_t block_t::size() const
         {
-            return bucket_t(bucket_address()).block_size();
+            return bucket().block_size();
         }
 
         ptr_t block_t::addr() const
@@ -48,10 +48,11 @@ namespace alloc
             return *reinterpret_cast<ptr_t *>(addr_ + size() - sizeof(ptr_t));
         }
 
-        ptr_t block_t::bucket_address() const
+        bucket_t block_t::bucket() const
         {
             size_t mask = ~(PAGE_SIZE - 1);
-            return reinterpret_cast<ptr_t>(reinterpret_cast<size_t>(addr_) & mask);
+            ptr_t bucket_address = reinterpret_cast<ptr_t>(reinterpret_cast<size_t>(addr_) & mask);
+            return bucket_t(bucket_address);
         }
 
         bucket_t::bucket_t(size_t block_size, std::thread::id id)
@@ -210,7 +211,7 @@ namespace alloc
             else
             {
                 block_t slab_block(block);
-                bucket_t allocator(slab_block.bucket_address());
+                bucket_t allocator = slab_block.bucket();
                 if (allocator.id() == id)
                     allocator.free_block(slab_block);
                 else
