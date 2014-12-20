@@ -72,7 +72,6 @@ namespace alloc
                 assert(bigger_bucket());
                 return bucket_t(bigger_bucket()).allocate_block(size);
             }
-            lock().lock();
             if (is_empty())
             {
                 if (!next_allocator())
@@ -80,7 +79,6 @@ namespace alloc
                     add_allocator();
                 }
                 block_t new_block = bucket_t(next_allocator()).allocate_block(block_size());
-                lock().unlock();
                 return new_block;
             }
             else
@@ -88,17 +86,14 @@ namespace alloc
                 block_t block(head());
                 head() = block.next();
                 block.next() = nullptr;
-                lock().unlock();
                 return block;
             }
         }
 
         void bucket_t::free_block(block_t free_block)
         {
-            lock().lock();
             free_block.next() = head();
             head() = free_block.addr();
-            lock().unlock();
         }
 
         bool bucket_t::is_empty()
@@ -108,7 +103,6 @@ namespace alloc
 
         void bucket_t::init(size_t size, std::thread::id thread_id)
         {
-            new (&lock()) std::mutex();
             next_allocator() = nullptr;
             block_size() = size;
             head() = addr_ + header_size();
@@ -136,14 +130,9 @@ namespace alloc
             next_allocator() = new_allocator.addr_;
         }
 
-        std::mutex & bucket_t::lock()
-        {
-            return *reinterpret_cast<std::mutex *>(addr_);
-        }
-
         ptr_t & bucket_t::head()
         {
-            return *reinterpret_cast<ptr_t *>(&lock() + 1);
+            return *reinterpret_cast<ptr_t *>(addr_);
         }
 
         ptr_t & bucket_t::next_allocator()

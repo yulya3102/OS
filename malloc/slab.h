@@ -3,7 +3,6 @@
 #include "common.h"
 #include "hoard_fwd.h"
 
-#include <mutex>
 #include <thread>
 
 namespace alloc
@@ -38,7 +37,6 @@ namespace alloc
         private:
             void init(size_t size, std::thread::id id);
             void add_allocator();
-            std::mutex & lock();
             ptr_t & head();
             ptr_t & next_allocator();
             ptr_t & bigger_bucket();
