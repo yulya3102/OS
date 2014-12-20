@@ -57,6 +57,8 @@ namespace alloc
             bucket_t smallest;
             size_t big_size;
             std::thread::id id;
+            ptr_t saved_blocks;
+            size_t saved_blocks_length;
         };
     }
 }

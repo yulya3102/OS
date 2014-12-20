@@ -179,6 +179,8 @@ namespace alloc
             : smallest(sizeof(ptr_t), std::this_thread::get_id())
             , big_size(big_size)
             , id(std::this_thread::get_id())
+            , saved_blocks(nullptr)
+            , saved_blocks_length(0)
         {
             bucket_t bucket = smallest;
             while (bucket.block_size() + step <= big_size)
@@ -205,7 +207,14 @@ namespace alloc
             {
                 block_t slab_block(block);
                 bucket_t allocator(slab_block.bucket_address());
-                allocator.free_block(slab_block);
+                if (allocator.id() == id)
+                    allocator.free_block(slab_block);
+                else
+                {
+                    *reinterpret_cast<ptr_t *>(block.addr()) = saved_blocks;
+                    saved_blocks = block.addr();
+                    saved_blocks_length++;
+                }
             }
         }
 
