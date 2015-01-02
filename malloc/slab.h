@@ -37,6 +37,7 @@ namespace alloc
         private:
             void init(size_t size, std::thread::id id);
             void add_allocator();
+            tag_t & tag();
             ptr_t & head();
             ptr_t & next_allocator();
             ptr_t & bigger_bucket();

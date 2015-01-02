@@ -19,4 +19,10 @@ namespace alloc
     size_t bytes_to_pages(size_t bytes);
     ptr_t allocate_pages(size_t pages);
     void free_pages(ptr_t addr, size_t pages);
+
+    enum class tag_t : char
+    {
+        BUCKET,
+        MMAP
+    };
 }

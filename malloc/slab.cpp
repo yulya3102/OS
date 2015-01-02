@@ -103,6 +103,7 @@ namespace alloc
 
         void bucket_t::init(size_t size, std::thread::id thread_id)
         {
+            tag() = tag_t::BUCKET;
             next_allocator() = nullptr;
             block_size() = size;
             head() = addr_ + header_size();
@@ -130,9 +131,14 @@ namespace alloc
             next_allocator() = new_allocator.addr_;
         }
 
+        tag_t & bucket_t::tag()
+        {
+            return *reinterpret_cast<tag_t *>(addr_);
+        }
+
         ptr_t & bucket_t::head()
         {
-            return *reinterpret_cast<ptr_t *>(addr_);
+            return *reinterpret_cast<ptr_t *>(&tag() + 1);
         }
 
         ptr_t & bucket_t::next_allocator()
@@ -157,7 +163,7 @@ namespace alloc
 
         size_t bucket_t::header_size()
         {
-            ptr_t not_aligned_head = sizeof(std::mutex) + 2 * sizeof(ptr_t) + sizeof(size_t) + sizeof(ptr_t) + sizeof(std::thread::id) + addr_;
+            ptr_t not_aligned_head = sizeof(tag_t) + sizeof(std::mutex) + 2 * sizeof(ptr_t) + sizeof(size_t) + sizeof(ptr_t) + sizeof(std::thread::id) + addr_;
             ptr_t aligned_head;
             if (reinterpret_cast<size_t>(not_aligned_head) % block_size() == 0)
                 aligned_head = not_aligned_head;
