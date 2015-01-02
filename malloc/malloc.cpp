@@ -71,25 +71,30 @@ int posix_memalign(void ** memptr, size_t alignment, size_t size)
 }
 
 extern "C"
+void * memalign(size_t alignment, size_t size)
+{
+    void * result;
+    int r = posix_memalign(&result, alignment, size);
+    if (!r)
+        return result;
+    return nullptr;
+}
+
+extern "C"
 void * aligned_alloc(size_t alignment, size_t size)
 {
-    return nullptr;
+    return memalign(alignment, size);
 }
 
 extern "C"
 void * valloc(size_t size)
 {
-    return nullptr;
-}
-
-extern "C"
-void * memalign(size_t alignment, size_t size)
-{
-    return nullptr;
+    return memalign(PAGE_SIZE, size);
 }
 
 extern "C"
 void * pvalloc(size_t size)
 {
-    return nullptr;
+    size = (size % PAGE_SIZE == 0) ? size : (size / PAGE_SIZE + 1) * PAGE_SIZE;
+    return valloc(size);
 }
