@@ -187,8 +187,27 @@ namespace alloc
 
         data_block_t slab_t::allocate_block(size_t size, size_t alignment)
         {
+            if (size <= big_size && alignment != 1)
+            {
+                for (size_t i = 1; i <= big_size; i *= 2)
+                {
+                    if (size < i)
+                        continue;
+
+                    size = i;
+                    break;
+                }
+
+                if (size < alignment)
+                    size = alignment;
+            }
+
             if (size > big_size)
+            {
+                if (alignment != 1)
+                    return data_block_t(nullptr);
                 return mmap::allocate_block(size).to_data_block();
+            }
 
             return smallest.allocate_block(size).to_data_block();
         }
