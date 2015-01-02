@@ -51,7 +51,7 @@ namespace alloc
         struct slab_t
         {
             slab_t(size_t step, size_t big_size, hoard::hoard_ptr hoard);
-            data_block_t allocate_block(size_t size);
+            data_block_t allocate_block(size_t size, size_t alignment);
             void free_block(data_block_t block);
             size_t block_size(const data_block_t & block) const;
         private:

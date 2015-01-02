@@ -13,7 +13,7 @@ namespace alloc
         struct hoard_t
         {
             hoard_t(size_t step, size_t big_size);
-            data_block_t allocate_block(size_t size);
+            data_block_t allocate_block(size_t size, size_t alignment = 1);
             void free_block(data_block_t block);
             size_t block_size(const data_block_t & block);
             void save_slab_blocks(ptr_t blocks);

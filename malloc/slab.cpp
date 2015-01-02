@@ -185,7 +185,7 @@ namespace alloc
             }
         }
 
-        data_block_t slab_t::allocate_block(size_t size)
+        data_block_t slab_t::allocate_block(size_t size, size_t alignment)
         {
             if (size > big_size)
                 return mmap::allocate_block(size).to_data_block();

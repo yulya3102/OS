@@ -9,9 +9,9 @@ namespace alloc
             , big_size(big_size)
         {}
 
-        data_block_t hoard_t::allocate_block(size_t size)
+        data_block_t hoard_t::allocate_block(size_t size, size_t alignment)
         {
-            return get_thread_slab().allocate_block(size);
+            return get_thread_slab().allocate_block(size, alignment);
         }
 
         void hoard_t::free_block(data_block_t block)
