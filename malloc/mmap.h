@@ -19,7 +19,7 @@ namespace alloc
             ptr_t addr_;
         };
 
-        block_t allocate_block(size_t size);
+        block_t allocate_block(size_t size, size_t alignment);
         void free_block(block_t block);
     }
 }

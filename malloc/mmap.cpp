@@ -38,7 +38,7 @@ namespace alloc
             return addr_;
         }
 
-        block_t allocate_block(size_t size)
+        block_t allocate_block(size_t size, size_t alignment)
         {
             size_t pages = bytes_to_pages(size + sizeof(size_t));
             block_t block(allocate_pages(pages));

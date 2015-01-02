@@ -203,11 +203,7 @@ namespace alloc
             }
 
             if (size > big_size)
-            {
-                if (alignment != 1)
-                    return data_block_t(nullptr);
-                return mmap::allocate_block(size).to_data_block();
-            }
+                return mmap::allocate_block(size, alignment).to_data_block();
 
             return smallest.allocate_block(size).to_data_block();
         }
