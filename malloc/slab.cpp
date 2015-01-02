@@ -40,12 +40,12 @@ namespace alloc
 
         ptr_t block_t::next() const
         {
-            return *reinterpret_cast<ptr_t *>(addr_ + size() - sizeof(ptr_t));
+            return *reinterpret_cast<ptr_t *>(addr_);
         }
 
         ptr_t & block_t::next()
         {
-            return *reinterpret_cast<ptr_t *>(addr_ + size() - sizeof(ptr_t));
+            return *reinterpret_cast<ptr_t *>(addr_);
         }
 
         bucket_t block_t::bucket() const
