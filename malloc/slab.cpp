@@ -197,7 +197,7 @@ namespace alloc
             {
                 for (size_t i = 1; i <= big_size; i *= 2)
                 {
-                    if (size < i)
+                    if (i < size)
                         continue;
 
                     size = i;
