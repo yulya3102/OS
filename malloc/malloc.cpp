@@ -66,8 +66,16 @@ void * realloc(void * ptr, size_t size)
 extern "C"
 int posix_memalign(void ** memptr, size_t alignment, size_t size)
 {
-    *memptr = nullptr;
-    return -1;
+    if (!size)
+    {
+        *memptr = nullptr;
+        return 0;
+    }
+
+    *memptr = get_allocator().allocate_block(size, alignment).addr();
+    if (!*memptr)
+        return -1;
+    return 0;
 }
 
 extern "C"
