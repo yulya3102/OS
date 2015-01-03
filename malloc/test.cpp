@@ -115,8 +115,8 @@ TEST(posix_memalign, random)
             size_t size = sizes();
             size_t alignment = 2 << align_pows();
             void * block;
-            posix_memalign(&block, alignment, size);
-            if (block == nullptr)
+            int result = posix_memalign(&block, alignment, size);
+            if (result == -1)
             {
                 std::cerr << "Failed to allocate " << size << " bytes aligned to " << alignment << std::endl;
                 continue;
