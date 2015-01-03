@@ -18,21 +18,21 @@ namespace alloc
         {}
 
         block_t::block_t(const data_block_t & data_block)
-            : addr_(data_block.addr() - sizeof(size_t) - sizeof(tag_t))
-            , offset_(0)
+            : addr_(prev_page_bound(data_block.addr()))
+            , offset_(data_block.addr() - addr_)
         {}
 
         data_block_t block_t::to_data_block() const
         {
             if (addr_)
-                return data_block_t(addr_ + sizeof(size_t) + sizeof(tag_t));
+                return data_block_t(addr_ + offset_);
             return data_block_t(nullptr);
         }
 
         size_t block_t::data_size()
         {
             if (addr_)
-                return size() - sizeof(size_t) - sizeof(tag_t);
+                return size() - offset_;
             return 0;
         }
 
@@ -53,8 +53,9 @@ namespace alloc
 
         block_t allocate_block(size_t size, size_t alignment)
         {
-            size_t pages = bytes_to_pages(size + sizeof(size_t) + sizeof(tag_t));
-            block_t block(allocate_pages(pages), 0);
+            size_t offset = sizeof(size_t) + sizeof(tag_t);
+            size_t pages = bytes_to_pages(size + offset);
+            block_t block(allocate_pages(pages), offset);
             block.size() = pages * PAGE_SIZE;
             return block;
         }
