@@ -60,7 +60,8 @@ namespace alloc
             size_t offset = std::max(2 * sizeof(size_t), alignment);
             size_t pages = bytes_to_pages(size + offset);
             block_t block(allocate_pages(pages), offset);
-            block.size() = pages * PAGE_SIZE;
+            if (block.addr())
+                block.size() = pages * PAGE_SIZE;
             return block;
         }
 

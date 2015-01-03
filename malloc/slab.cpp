@@ -56,7 +56,8 @@ namespace alloc
         bucket_t::bucket_t(size_t block_size, std::thread::id id)
             : addr_(allocate_pages(1))
         {
-            init(block_size, id);
+            if (addr_)
+                init(block_size, id);
         }
 
         bucket_t::bucket_t(ptr_t addr)
@@ -75,6 +76,8 @@ namespace alloc
                 if (!next_allocator())
                 {
                     add_allocator();
+                    if (!next_allocator())
+                        return block_t(nullptr);
                 }
                 block_t new_block = bucket_t(next_allocator()).allocate_block(block_size());
                 return new_block;
