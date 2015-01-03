@@ -37,4 +37,10 @@ namespace alloc
     {
         munmap(addr, pages * PAGE_SIZE);
     }
+
+    ptr_t prev_page_bound(ptr_t addr)
+    {
+        return reinterpret_cast<ptr_t>(
+            reinterpret_cast<size_t>(addr - 1) / PAGE_SIZE * PAGE_SIZE);
+    }
 }

@@ -50,9 +50,7 @@ namespace alloc
 
         bucket_t block_t::bucket() const
         {
-            size_t mask = ~(PAGE_SIZE - 1);
-            ptr_t bucket_address = reinterpret_cast<ptr_t>(reinterpret_cast<size_t>(addr_) & mask);
-            return bucket_t(bucket_address);
+            return bucket_t(prev_page_bound(addr_));
         }
 
         bucket_t::bucket_t(size_t block_size, std::thread::id id)
@@ -256,8 +254,7 @@ namespace alloc
 
         bool slab_t::is_mmap_block(const data_block_t & block) const
         {
-            ptr_t prev_page_bound = reinterpret_cast<ptr_t>(reinterpret_cast<size_t>(block.addr() - 1) / PAGE_SIZE * PAGE_SIZE);
-            return *reinterpret_cast<tag_t *>(prev_page_bound) == tag_t::MMAP;
+            return *reinterpret_cast<tag_t *>(prev_page_bound(block.addr())) == tag_t::MMAP;
         }
     }
 }

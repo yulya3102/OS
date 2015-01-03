@@ -25,4 +25,6 @@ namespace alloc
         BUCKET,
         MMAP
     };
+
+    ptr_t prev_page_bound(ptr_t addr);
 }
