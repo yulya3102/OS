@@ -11,18 +11,26 @@ namespace alloc
             tag() = tag_t::MMAP;
         }
 
+        block_t::block_t()
+            : addr_(nullptr)
+        {}
+
         block_t::block_t(const data_block_t & data_block)
             : addr_(data_block.addr() - sizeof(size_t) - sizeof(tag_t))
         {}
 
         data_block_t block_t::to_data_block() const
         {
-            return data_block_t(addr_ + sizeof(size_t) + sizeof(tag_t));
+            if (addr_)
+                return data_block_t(addr_ + sizeof(size_t) + sizeof(tag_t));
+            return data_block_t(nullptr);
         }
 
         size_t block_t::data_size()
         {
-            return size() - sizeof(size_t) - sizeof(tag_t);
+            if (addr_)
+                return size() - sizeof(size_t) - sizeof(tag_t);
+            return 0;
         }
 
         tag_t & block_t::tag()

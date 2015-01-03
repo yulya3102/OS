@@ -9,6 +9,7 @@ namespace alloc
         struct block_t
         {
             block_t(ptr_t addr);
+            block_t();
             block_t(const data_block_t & data_block);
             data_block_t to_data_block() const;
             size_t data_size();
