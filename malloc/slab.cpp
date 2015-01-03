@@ -256,7 +256,8 @@ namespace alloc
 
         bool slab_t::is_mmap_block(const data_block_t & block) const
         {
-            return (reinterpret_cast<size_t>(mmap::block_t(block).addr()) % PAGE_SIZE) == 0;
+            ptr_t prev_page_bound = reinterpret_cast<ptr_t>(reinterpret_cast<size_t>(block.addr() - 1) / PAGE_SIZE * PAGE_SIZE);
+            return *reinterpret_cast<tag_t *>(prev_page_bound) == tag_t::MMAP;
         }
     }
 }
