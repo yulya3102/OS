@@ -100,7 +100,7 @@ TEST(posix_memalign, random)
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator(seed);
     auto sizes = std::bind(std::uniform_int_distribution<size_t>(0, 10000), generator);
-    auto align_pows = std::bind(std::uniform_int_distribution<size_t>(0, 20), generator);
+    auto align_pows = std::bind(std::uniform_int_distribution<size_t>(2, 20), generator);
 
     size_t actions = sizes();
     std::set<void *> blocks;
