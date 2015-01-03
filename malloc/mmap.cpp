@@ -5,18 +5,21 @@ namespace alloc
 {
     namespace mmap
     {
-        block_t::block_t(ptr_t addr)
+        block_t::block_t(ptr_t addr, size_t offset)
             : addr_(addr)
+            , offset_(offset)
         {
             tag() = tag_t::MMAP;
         }
 
         block_t::block_t()
             : addr_(nullptr)
+            , offset_(0)
         {}
 
         block_t::block_t(const data_block_t & data_block)
             : addr_(data_block.addr() - sizeof(size_t) - sizeof(tag_t))
+            , offset_(0)
         {}
 
         data_block_t block_t::to_data_block() const
@@ -51,7 +54,7 @@ namespace alloc
         block_t allocate_block(size_t size, size_t alignment)
         {
             size_t pages = bytes_to_pages(size + sizeof(size_t) + sizeof(tag_t));
-            block_t block(allocate_pages(pages));
+            block_t block(allocate_pages(pages), 0);
             block.size() = pages * PAGE_SIZE;
             return block;
         }

@@ -8,7 +8,7 @@ namespace alloc
     {
         struct block_t
         {
-            block_t(ptr_t addr);
+            block_t(ptr_t addr, size_t offset);
             block_t();
             block_t(const data_block_t & data_block);
             data_block_t to_data_block() const;
@@ -18,6 +18,7 @@ namespace alloc
             ptr_t addr() const;
         private:
             ptr_t addr_;
+            size_t offset_;
         };
 
         block_t allocate_block(size_t size, size_t alignment);
