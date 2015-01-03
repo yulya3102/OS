@@ -1,6 +1,8 @@
 #include "mmap.h"
 #include "common.h"
 
+#include <algorithm>
+
 namespace alloc
 {
     namespace mmap
@@ -53,7 +55,9 @@ namespace alloc
 
         block_t allocate_block(size_t size, size_t alignment)
         {
-            size_t offset = sizeof(size_t) + sizeof(tag_t);
+            if (alignment > PAGE_SIZE)
+                return block_t();
+            size_t offset = std::max(2 * sizeof(size_t), alignment);
             size_t pages = bytes_to_pages(size + offset);
             block_t block(allocate_pages(pages), offset);
             block.size() = pages * PAGE_SIZE;
