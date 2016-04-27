@@ -1,3 +1,5 @@
+#include "common.h"
+
 #include <pty.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -12,14 +14,6 @@
 
 #define UNUSED(x) (void)(x)
 
-int check(const char * message, int result) {
-    if (result == -1) {
-        perror(message);
-        _exit(1);
-    }
-    return result;
-}
-
 void write_(int fd, char * buffer, int size) {
     int done = 0;
     while (done < size) {
@@ -33,16 +27,6 @@ void close_(int fd) {
 
 void dup2_(int fd1, int fd2) {
     check("dup2", dup2(fd1, fd2));
-}
-
-void * malloc_(int size) {
-    void * buffer = malloc(size);
-    if (buffer == NULL) {
-        char * message = "malloc() failed";
-        write_(1, message, strlen(message));
-        _exit(1);
-    }
-    return buffer;
 }
 
 int daemon_pid;
@@ -80,19 +64,6 @@ void update_events(int eof, int current_size, int max_size, struct pollfd * in, 
             in->events |= POLLIN;
         }
     }
-}
-
-typedef struct {
-    int size, current_size;
-    char * buffer;
-} buffer_t;
-
-buffer_t new_buffer(int size) {
-    buffer_t buffer;
-    buffer.size = size;
-    buffer.current_size = 0;
-    buffer.buffer = malloc_(size);
-    return buffer;
 }
 
 int pos(char symbol, char * buffer, int size) {

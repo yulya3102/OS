@@ -1,3 +1,5 @@
+#include "common.h"
+
 #include <sys/ioctl.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -20,44 +22,12 @@ void sigwinch_handler(int signum) {
     window_size_changed = 1;
 }
 
-int check(char * message, int value) {
-    if (value == -1) {
-        perror(message);
-        _exit(1);
-    }
-    return value;
-}
-
 typedef struct winsize winsize_t;
 
 winsize_t get_window_size(int fd) {
     winsize_t ws;
     check("ioctl", ioctl(fd, TIOCGWINSZ, &ws));
     return ws;
-}
-
-void * malloc_(size_t size) {
-    void * buffer = malloc(size);
-    if (buffer == NULL) {
-        char * message = "malloc() failed";
-        write(2, message, strlen(message));
-        _exit(1);
-    }
-    return buffer;
-}
-
-typedef struct {
-    char * buffer;
-    int size;
-    int current_size;
-} buffer_t;
-
-buffer_t new_buffer(int size) {
-    buffer_t buffer;
-    buffer.buffer = malloc_(size);
-    buffer.size = size;
-    buffer.current_size = 0;
-    return buffer;
 }
 
 int main() {
