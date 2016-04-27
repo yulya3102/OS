@@ -1,4 +1,5 @@
 #include "common.h"
+#include "daemon.h"
 
 #include <pty.h>
 #include <fcntl.h>
@@ -27,14 +28,6 @@ void close_(int fd) {
 
 void dup2_(int fd1, int fd2) {
     check("dup2", dup2(fd1, fd2));
-}
-
-int daemon_pid;
-
-void sigint_handler(int signum) {
-    UNUSED(signum);
-    kill(daemon_pid, SIGINT);
-    _exit(1);
 }
 
 void sigchld_handler(int signum) {
@@ -123,15 +116,7 @@ void preprocess_data(int ttyfd, buffer_t * accepted, buffer_t * preprocessed, in
 }
 
 int main() {
-    daemon_pid = check("fork", fork());
-    signal(SIGINT, &sigint_handler);
-    signal(SIGCHLD, &sigchld_handler);
-    if (daemon_pid) {
-        int status;
-        waitpid(daemon_pid, &status, 0);
-        return 0;
-    }
-    check("setsid", setsid());
+    check("daemonize", daemonize(true));
     struct addrinfo hints;
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_INET;
