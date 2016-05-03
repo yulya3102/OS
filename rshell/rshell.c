@@ -115,6 +115,121 @@ void preprocess_data(int ttyfd, buffer_t * accepted, buffer_t * preprocessed, in
     }
 }
 
+void on_accepted(int accepted) {
+    char * hello = "hello, world\n";
+    write_(accepted, hello, strlen(hello));
+    int master, slave;
+    char buf[4096];
+    check("openpty", openpty(&master, &slave, buf, NULL, NULL));
+    if (check("fork", fork())) {
+        close_(slave);
+
+        buffer_t master_buffer = new_buffer(4096);
+        buffer_t preprocessed_buffer = new_buffer(4096);
+        buffer_t accepted_buffer = new_buffer(4096);
+
+        short error_events = POLLERR | POLLHUP | POLLNVAL;
+        int pollfds_size = 2;
+        struct pollfd pollfds[pollfds_size];
+        struct pollfd masterpollfd;
+        masterpollfd.fd = master;
+        masterpollfd.events = POLLIN | error_events;
+        masterpollfd.revents = 0;
+        struct pollfd acceptedpollfd;
+        acceptedpollfd.fd = accepted;
+        acceptedpollfd.events = POLLIN | error_events;
+        acceptedpollfd.revents = 0;
+        pollfds[0] = masterpollfd;
+        pollfds[1] = acceptedpollfd;
+        int master_eof = 0;
+        int accepted_eof = 0;
+        int accepted_state = 0;
+        while (!master_eof || !accepted_eof ||
+                master_buffer.current_size > 0 ||
+                preprocessed_buffer.current_size > 0 ||
+                accepted_buffer.current_size > 0) {
+            check("poll", poll(pollfds, pollfds_size, -1));
+            if (pollfds[0].revents & POLLIN) {
+                read_(master,
+                      master_buffer.buffer,
+                      master_buffer.size,
+                      &master_buffer.current_size,
+                      &master_eof);
+            }
+            if (pollfds[1].revents & POLLOUT) {
+                int r = check("write",
+                        write(accepted,
+                              master_buffer.buffer,
+                              master_buffer.current_size));
+                memmove(master_buffer.buffer,
+                        master_buffer.buffer + r,
+                        master_buffer.current_size - r);
+                master_buffer.current_size -= r;
+            }
+            if (pollfds[1].revents & POLLIN) {
+                read_(accepted,
+                      accepted_buffer.buffer,
+                      accepted_buffer.size,
+                      &accepted_buffer.current_size,
+                      &accepted_eof);
+                preprocess_data(master,
+                                &accepted_buffer,
+                                &preprocessed_buffer,
+                                &accepted_state);
+            }
+            if (pollfds[0].revents & POLLOUT) {
+                int r = check("write",
+                        write(master,
+                              preprocessed_buffer.buffer,
+                              preprocessed_buffer.current_size));
+                memmove(preprocessed_buffer.buffer,
+                        preprocessed_buffer.buffer + r,
+                        preprocessed_buffer.current_size - r);
+                preprocessed_buffer.current_size -= r;
+            }
+            if (pollfds[0].revents & error_events) {
+                master_eof = 1;
+                preprocessed_buffer.current_size = 0;
+                accepted_buffer.current_size = 0;
+                accepted_eof = 1;
+            }
+            if (pollfds[1].revents & error_events) {
+                accepted_eof = 1;
+                master_buffer.current_size = 0;
+                master_eof = 1;
+            }
+
+            update_events(master_eof,
+                          master_buffer.current_size,
+                          master_buffer.size,
+                          &pollfds[0],
+                          &pollfds[1]);
+            update_events(accepted_eof,
+                          preprocessed_buffer.current_size,
+                          preprocessed_buffer.size,
+                          &pollfds[1],
+                          &pollfds[0]);
+        }
+        close_(master);
+        close_(accepted);
+        free(master_buffer.buffer);
+        free(preprocessed_buffer.buffer);
+        free(accepted_buffer.buffer);
+    } else { // сессия
+        close_(master);
+        close_(accepted);
+        check("setsid", setsid());
+        int fd = check("open", open(buf, O_RDWR));
+        close_(fd);
+
+        dup2_(slave, 0);
+        dup2_(slave, 1);
+        dup2_(slave, 2);
+        close_(slave);
+        execl("/bin/sh", "/bin/sh", NULL);
+    }
+}
+
 int main() {
     check("daemonize", daemonize(true));
     struct addrinfo hints;
@@ -138,88 +253,10 @@ int main() {
         int acceptedpid = check("fork", fork());
         if (acceptedpid) {
             close_(accepted);
-            continue;
         }
-        close_(socketfd);
-        char * hello = "hello, world\n";
-        write_(accepted, hello, strlen(hello));
-        int master, slave;
-        char buf[4096];
-        check("openpty", openpty(&master, &slave, buf, NULL, NULL));
-        if (check("fork", fork())) {
-            close_(slave);
-
-            buffer_t master_buffer = new_buffer(4096);
-            buffer_t preprocessed_buffer = new_buffer(4096);
-            buffer_t accepted_buffer = new_buffer(4096);
-
-            short error_events = POLLERR | POLLHUP | POLLNVAL;
-            int pollfds_size = 2;
-            struct pollfd pollfds[pollfds_size];
-            struct pollfd masterpollfd;
-            masterpollfd.fd = master;
-            masterpollfd.events = POLLIN | error_events;
-            masterpollfd.revents = 0;
-            struct pollfd acceptedpollfd;
-            acceptedpollfd.fd = accepted;
-            acceptedpollfd.events = POLLIN | error_events;
-            acceptedpollfd.revents = 0;
-            pollfds[0] = masterpollfd;
-            pollfds[1] = acceptedpollfd;
-            int master_eof = 0;
-            int accepted_eof = 0;
-            int accepted_state = 0;
-            while (!master_eof || !accepted_eof || master_buffer.current_size > 0 || preprocessed_buffer.current_size > 0 || accepted_buffer.current_size > 0) {
-                check("poll", poll(pollfds, pollfds_size, -1));
-                if (pollfds[0].revents & POLLIN) {
-                    read_(master, master_buffer.buffer, master_buffer.size, &master_buffer.current_size, &master_eof);
-                }
-                if (pollfds[1].revents & POLLOUT) {
-                    int r = check("write", write(accepted, master_buffer.buffer, master_buffer.current_size));
-                    memmove(master_buffer.buffer, master_buffer.buffer + r, master_buffer.current_size - r);
-                    master_buffer.current_size -= r;
-                }
-                if (pollfds[1].revents & POLLIN) {
-                    read_(accepted, accepted_buffer.buffer, accepted_buffer.size, &accepted_buffer.current_size, &accepted_eof);
-                    preprocess_data(master, &accepted_buffer, &preprocessed_buffer, &accepted_state);
-                }
-                if (pollfds[0].revents & POLLOUT) {
-                    int r = check("write", write(master, preprocessed_buffer.buffer, preprocessed_buffer.current_size));
-                    memmove(preprocessed_buffer.buffer, preprocessed_buffer.buffer + r, preprocessed_buffer.current_size - r);
-                    preprocessed_buffer.current_size -= r;
-                }
-                if (pollfds[0].revents & error_events) {
-                    master_eof = 1;
-                    preprocessed_buffer.current_size = 0;
-                    accepted_buffer.current_size = 0;
-                    accepted_eof = 1;
-                }
-                if (pollfds[1].revents & error_events) {
-                    accepted_eof = 1;
-                    master_buffer.current_size = 0;
-                    master_eof = 1;
-                }
-
-                update_events(master_eof, master_buffer.current_size, master_buffer.size, &pollfds[0], &pollfds[1]);
-                update_events(accepted_eof, preprocessed_buffer.current_size, preprocessed_buffer.size, &pollfds[1], &pollfds[0]);
-            }
-            close_(master);
-            close_(accepted);
-            free(master_buffer.buffer);
-            free(preprocessed_buffer.buffer);
-            free(accepted_buffer.buffer);
-        } else { // сессия
-            close_(master);
-            close_(accepted);
-            check("setsid", setsid());
-            int fd = check("open", open(buf, O_RDWR));
-            close_(fd);
-
-            dup2_(slave, 0);
-            dup2_(slave, 1);
-            dup2_(slave, 2);
-            close_(slave);
-            execl("/bin/sh", "/bin/sh", NULL);
+        else {
+            close_(socketfd);
+            on_accepted(accepted);
         }
     }
     return 0;
