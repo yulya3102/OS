@@ -76,12 +76,14 @@ void set_terminal_size(int ttyfd, short rows, short columns) {
     check("ioctl", ioctl(ttyfd, TIOCSWINSZ, &ws));
 }
 
-void preprocess_data(int ttyfd, buffer_t * accepted, buffer_t * preprocessed, int * accepted_state) {
-    if (*accepted_state == 0) { // new event
+typedef enum {NO_EVENT, RESIZE_EVENT, TYPE_EVENT} current_event_t;
+
+void preprocess_data(int ttyfd, buffer_t * accepted, buffer_t * preprocessed, current_event_t * accepted_state) {
+    if (*accepted_state == NO_EVENT) {
         if (accepted->buffer[0] == 'r') {
-            *accepted_state = 1;
+            *accepted_state = RESIZE_EVENT;
         } else if (accepted->buffer[0] == 't') {
-            *accepted_state = 2;
+            *accepted_state = TYPE_EVENT;
         } else {
             char * message = "unknown event\n";
             write(1, message, strlen(message));
@@ -90,15 +92,15 @@ void preprocess_data(int ttyfd, buffer_t * accepted, buffer_t * preprocessed, in
         accepted->current_size--;
         memmove(accepted->buffer, accepted->buffer + 1, accepted->current_size);
     }
-    if (*accepted_state == 1) { // resize event
+    if (*accepted_state == RESIZE_EVENT) {
         short rows = *((short *)(accepted->buffer));
         short cols = *((short *)(accepted->buffer + 2));
         set_terminal_size(ttyfd, rows, cols);
         int deleted_string_length = 5;
         memmove(accepted->buffer, accepted->buffer + deleted_string_length, accepted->current_size - deleted_string_length);
         accepted->current_size -= deleted_string_length;
-        *accepted_state = 0;
-    } else if (*accepted_state == 2) { // type event
+        *accepted_state = NO_EVENT;
+    } else if (*accepted_state == TYPE_EVENT) {
         int p = pos('\0', accepted->buffer, accepted->current_size);
         if (p == -1) {
             memmove(preprocessed->buffer, accepted->buffer, accepted->current_size);
@@ -110,7 +112,7 @@ void preprocess_data(int ttyfd, buffer_t * accepted, buffer_t * preprocessed, in
             int deleted_string_length = p + 1;
             memmove(accepted->buffer, accepted->buffer + deleted_string_length, accepted->current_size - deleted_string_length);
             accepted->current_size -= deleted_string_length;
-            *accepted_state = 0;
+            *accepted_state = NO_EVENT;
         }
     }
 }
@@ -143,7 +145,7 @@ void on_accepted(int accepted) {
         pollfds[1] = acceptedpollfd;
         int master_eof = 0;
         int accepted_eof = 0;
-        int accepted_state = 0;
+        current_event_t accepted_state = NO_EVENT;
         while (!master_eof || !accepted_eof ||
                 master_buffer.current_size > 0 ||
                 preprocessed_buffer.current_size > 0 ||
